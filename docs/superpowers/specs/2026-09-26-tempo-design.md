@@ -268,7 +268,8 @@ insert where no row exists, so they never overwrite a user choice or a tombstone
   twitter.com, reddit.com, instagram.com, facebook.com, tiktok.com, netflix.com, twitch.tv,
   espn.com, news.ycombinator.com.
 
-The exact bundle ids live in `Sources/TempoCore/Resources/default-rules.json`.
+The exact bundle ids live in `Sources/TempoCore/DefaultRules.swift` (a Swift table, not a
+bundled resource, because a hand-assembled app cannot load SwiftPM resource bundles cleanly).
 
 ### 7.4 Claude fallback (`ClassifierQueue`, `ClaudeClassifier`)
 - Runs only when an API key is in Keychain (service `com.grantfeltz.tempo`, account
@@ -329,7 +330,10 @@ Fed on every tick with (now, active or away, live category, live item names).
 ## 11. Build, sign, install
 
 - `swift build -c release`, then `scripts/build-app.sh` assembles `build/Tempo.app`
-  (Info.plist, binary, fonts, icon, default rules).
+  (Info.plist, binary, fonts, icon).
+- Windows (timeline, settings) are AppKit `NSWindow`s hosting SwiftUI views, opened by a small
+  window manager, so the menu bar popover and notification clicks can open them without a
+  SwiftUI `openWindow` environment. The only SwiftUI scene is the `MenuBarExtra`.
 - App icon: a small Swift script draws the three-blocks glyph at every size into an iconset;
   `iconutil` makes `AppIcon.icns`.
 - Signing: `scripts/setup-signing.sh` creates a self-signed code signing identity
