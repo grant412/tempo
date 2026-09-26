@@ -1,5 +1,158 @@
 import SwiftUI
+import TempoCore
 
 struct DayCanvasView: View {
-    var body: some View { Color.clear.card() }
+    @EnvironmentObject var model: TempoModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Text("Timeline").font(Theme.display(20)).kerning(-0.4)
+                Spacer()
+                Text("Click any block to see what was inside.").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                NudgeBadge(size: 18)
+                Text("nudge sent").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+            }
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    DayCanvas(range: model.visibleRange, layout: model.layout, nudges: model.nudgeMarks,
+                              now: model.isShowingToday ? model.now : nil, selectedID: model.selectedBlockID,
+                              calendar: model.calendar) { model.select($0) }
+                        .padding(.vertical, 10)
+                        .padding(.trailing, 14)
+                }
+                .onAppear { proxy.scrollTo(DayCanvas.anchorID, anchor: .center) }
+                .onChange(of: model.shownDay) { _, _ in proxy.scrollTo(DayCanvas.anchorID, anchor: .center) }
+            }
+        }
+        .card(EdgeInsets(top: 14, leading: 18, bottom: 12, trailing: 18))
+    }
+}
+
+struct DayCanvas: View {
+    static let anchorID = "day-anchor"
+
+    let range: DateInterval
+    let layout: DayLayout
+    let nudges: [NudgeRecord]
+    let now: Date?
+    let selectedID: Date?
+    let calendar: Calendar
+    let onSelect: (Block) -> Void
+
+    private let gutter: CGFloat = 64
+    private func y(_ d: Date) -> CGFloat { CGFloat(d.timeIntervalSince(range.start) / 60) }
+    private var height: CGFloat { CGFloat(range.duration / 60) }
+    private var hours: [Date] { stride(from: 0, through: range.duration, by: 3600).map { range.start.addingTimeInterval($0) } }
+    private var anchorY: CGFloat { now.map(y) ?? y(layout.blocks.first?.start ?? range.start) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = max(0, geo.size.width - gutter)
+            ZStack(alignment: .topLeading) {
+                ForEach(hours, id: \.self) { h in
+                    Text(Format.hourLabel(calendar.component(.hour, from: h)))
+                        .font(Theme.mono(11)).foregroundStyle(Theme.muted)
+                        .frame(width: 50, alignment: .trailing)
+                        .offset(y: y(h) - 7)
+                    Rectangle().fill(Theme.grid).frame(width: max(0, geo.size.width - 58), height: 1)
+                        .offset(x: 58, y: y(h))
+                    if h.addingTimeInterval(1800) < range.end {
+                        Path { p in
+                            p.move(to: .zero)
+                            p.addLine(to: CGPoint(x: width, y: 0))
+                        }
+                        .stroke(Theme.grid2, style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .frame(width: width, height: 1)
+                        .offset(x: gutter, y: y(h) + 30)
+                    }
+                }
+
+                ForEach(layout.gaps) { gap in
+                    AwayView(duration: gap.duration)
+                        .frame(width: width, height: max(0, y(gap.end) - y(gap.start) - 2))
+                        .offset(x: gutter, y: y(gap.start) + 1)
+                }
+
+                ForEach(layout.blocks) { block in
+                    let h = max(2, y(block.end) - y(block.start) - 2)
+                    BlockView(block: block, height: h, selected: block.id == selectedID)
+                        .frame(width: width, height: h)
+                        .offset(x: gutter, y: y(block.start))
+                        .onTapGesture { onSelect(block) }
+                        .zIndex(block.id == selectedID ? 1 : 0) // keep the ring above the next block
+                }
+
+                ForEach(nudges) { n in
+                    NudgeBadge(size: 24)
+                        .help(n.kind == .breakTime ? "Break nudge at \(Format.clock(n.at))" : "Distraction nudge at \(Format.clock(n.at))")
+                        .offset(x: geo.size.width - 12, y: y(n.at) - 12)
+                        .zIndex(2)
+                }
+
+                if let now {
+                    NowMarker(time: now, width: geo.size.width).offset(y: y(now) - 9).zIndex(2)
+                }
+            }
+        }
+        .frame(height: height)
+        .overlay {
+            // Outside the GeometryReader: inside it, scrollTo centers the whole canvas instead of this point.
+            Color.clear.frame(width: 1, height: 1).id(Self.anchorID).position(x: 1, y: anchorY)
+        }
+    }
+}
+
+struct AwayView: View {
+    let duration: TimeInterval
+    var body: some View {
+        GeometryReader { g in
+            ZStack {
+                Canvas { ctx, size in
+                    var x = -size.height
+                    while x < size.width {
+                        var p = Path()
+                        p.move(to: CGPoint(x: x, y: size.height))
+                        p.addLine(to: CGPoint(x: x + size.height, y: 0))
+                        ctx.stroke(p, with: .color(Theme.chip), lineWidth: 5)
+                        x += 10
+                    }
+                }
+                if g.size.height >= 24 {
+                    Text("Away, \(Format.duration(duration))").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct NudgeBadge: View {
+    var size: CGFloat = 24
+    var body: some View {
+        Image(systemName: "bell.fill")
+            .font(.system(size: size * 0.45, weight: .semibold))
+            .foregroundStyle(Theme.panel)
+            .frame(width: size, height: size)
+            .background(Theme.ink, in: Circle())
+            .overlay(Circle().stroke(Theme.panel, lineWidth: 2))
+    }
+}
+
+struct NowMarker: View {
+    let time: Date
+    let width: CGFloat
+    private var label: String {
+        Format.clock(time).replacingOccurrences(of: " AM", with: "").replacingOccurrences(of: " PM", with: "")
+    }
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Rectangle().fill(Theme.ink).frame(width: max(0, width - 58), height: 2).offset(x: 58)
+            Circle().fill(Theme.ink).frame(width: 10, height: 10).offset(x: 54)
+            Text(label).font(Theme.mono(11, .semibold)).foregroundStyle(Theme.panel)
+                .frame(width: 44, height: 18).background(Theme.ink, in: Capsule()).offset(x: 4)
+        }
+        .frame(width: width, height: 18, alignment: .leading)
+        .allowsHitTesting(false)
+    }
 }
