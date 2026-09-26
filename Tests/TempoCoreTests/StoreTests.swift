@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 import Testing
 @testable import TempoCore
 
@@ -64,5 +65,27 @@ struct StoreTests {
 
         try store.setMeta("seed_version", "1")
         #expect(try store.meta("seed_version") == "1")
+    }
+
+    /// Another program holding a write lock for a moment must not fail a write (spec 12).
+    @Test func writeWaitsOutAnotherConnectionsLock() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("tempo-busy-\(UUID().uuidString).db").path
+        defer { for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: path + suffix) } }
+        let store = try Store(path: path)
+        var other: OpaquePointer?
+        #expect(sqlite3_open(path, &other) == SQLITE_OK)
+        #expect(sqlite3_exec(other, "BEGIN IMMEDIATE;", nil, nil, nil) == SQLITE_OK)
+        let handle = other
+        let released = DispatchSemaphore(value: 0)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
+            sqlite3_exec(handle, "COMMIT;", nil, nil, nil)
+            released.signal()
+        }
+        let insert = Result { try store.insertSegment(Segment(id: nil, start: d(0), end: d(60), snapshot: term)) }
+        released.wait()
+        sqlite3_close(other)
+        _ = try insert.get()
+        #expect(try store.segments(overlapping: DateInterval(start: d(0), end: d(100))).count == 1)
     }
 }

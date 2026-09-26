@@ -19,6 +19,8 @@ public final class Store {
             db = nil
             throw StoreError.open(message)
         }
+        // Wait up to 5 s for another connection's lock instead of failing at once (spec 12).
+        sqlite3_busy_timeout(db, 5000)
         try exec("PRAGMA journal_mode=WAL;")
         try migrate()
     }
