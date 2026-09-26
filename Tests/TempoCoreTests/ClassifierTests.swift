@@ -20,6 +20,21 @@ private let okBody = """
 {"content":[{"type":"text","text":"{\\"results\\":[{\\"id\\":\\"0\\",\\"category\\":\\"distraction\\"},{\\"id\\":\\"1\\",\\"category\\":\\"code\\"}]}"}],"stop_reason":"end_turn"}
 """
 
+/// The item list as Claude receives it: decoded out of the user message, so escaped slashes cannot hide a leak.
+private func sentItems(_ request: URLRequest) throws -> [[String: Any]] {
+    let body = try #require(request.httpBody)
+    let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+    let content = try #require((json["messages"] as? [[String: Any]])?.first?["content"] as? String)
+    let listStart = try #require(content.firstIndex(of: "["))
+    return try #require(try JSONSerialization.jsonObject(with: Data(content[listStart...].utf8)) as? [[String: Any]])
+}
+
+private func titled(_ titles: [String]) -> [ClassifyItem] {
+    titles.enumerated().map { i, title in
+        ClassifyItem(key: ItemKey(kind: .app, key: "com.example.t\(i)"), appName: "App\(i)", sampleTitle: title)
+    }
+}
+
 struct ClaudeClassifierTests {
     @Test func requestShape() throws {
         let c = ClaudeClassifier(apiKey: "test-key", transport: StubTransport(status: 200, body: okBody))
@@ -51,8 +66,35 @@ struct ClaudeClassifierTests {
         await #expect(throws: ClassifierError.unauthorized) { try await unauthorized.classify([ytItem]) }
         let server = ClaudeClassifier(apiKey: "k", transport: StubTransport(status: 529, body: "{}"))
         await #expect(throws: ClassifierError.http(529)) { try await server.classify([ytItem]) }
+        let forbidden = ClaudeClassifier(apiKey: "k", transport: StubTransport(status: 403, body: "{}"))
+        await #expect(throws: ClassifierError.http(403)) { try await forbidden.classify([ytItem]) }
         let refusal = ClaudeClassifier(apiKey: "k", transport: StubTransport(status: 200, body: #"{"content":[],"stop_reason":"refusal"}"#))
         await #expect(throws: ClassifierError.refused) { try await refusal.classify([ytItem]) }
+    }
+
+    @Test func titlesWithUrlsOrPathsAreNotSent() throws {
+        let c = ClaudeClassifier(apiKey: "k", transport: StubTransport(status: 200, body: okBody))
+        let req = try c.makeRequest(items: titled([
+            "localhost:5173/admin?token=abc", "https://example.com/x",
+            "grant@Mac: ~/Desktop/clients/acme", "/Users/grant/Desktop/notes.md", "grant@Mac: /etc",
+        ]))
+        let sent = try sentItems(req)
+        #expect(sent.count == 5)
+        for item in sent { #expect(item["title"] == nil) }
+        let sentText = sent.flatMap { $0.values.compactMap { $0 as? String } }.joined(separator: "\n")
+        for leak in ["token", "localhost", "example.com/x", "~/Desktop", "/Users/grant", "/etc"] {
+            #expect(!sentText.contains(leak))
+        }
+    }
+
+    @Test func plainTitlesAreSent() throws {
+        let c = ClaudeClassifier(apiKey: "k", transport: StubTransport(status: 200, body: okBody))
+        let req = try c.makeRequest(items: titled(["  Inbox (3) - Gmail  ", String(repeating: "a", count: 200), "   "]))
+        let sent = try sentItems(req)
+        #expect(sent[0]["title"] as? String == "Inbox (3) - Gmail")
+        #expect(String(data: req.httpBody!, encoding: .utf8)!.contains("Inbox (3) - Gmail"))
+        #expect((sent[1]["title"] as? String)?.count == 120)
+        #expect(sent[2]["title"] == nil)
     }
 }
 

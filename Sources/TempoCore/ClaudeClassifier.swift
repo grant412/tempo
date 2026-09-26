@@ -59,7 +59,7 @@ public struct ClaudeClassifier: Sendable {
         let (data, response) = try await transport.send(try makeRequest(items: items))
         switch response.statusCode {
         case 200: return try Self.parse(data: data, items: items)
-        case 401, 403: throw ClassifierError.unauthorized
+        case 401: throw ClassifierError.unauthorized
         default: throw ClassifierError.http(response.statusCode)
         }
     }
@@ -69,6 +69,15 @@ public struct ClaudeClassifier: Sendable {
         + CategoryID.assignable.map { "- \($0.rawValue): \($0.promptDescription)" }.joined(separator: "\n")
         + "\nPick the single best category for each item. If unsure, pick what a typical knowledge worker most often uses it for."
 
+    /// Window and tab titles can hold URLs, paths, or query strings. Any title that looks like one is never sent.
+    static func safeTitle(_ title: String?) -> String? {
+        guard let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        if ["://", "~/", "?", "="].contains(where: trimmed.contains) { return nil }
+        // A slash followed by a non-space character: "a/b", "/Users/...", and "grant@Mac: /etc".
+        if trimmed.range(of: #"/\S"#, options: .regularExpression) != nil { return nil }
+        return String(trimmed.prefix(120))
+    }
+
     static func body(items: [ClassifyItem]) -> [String: Any] {
         let list: [[String: Any]] = items.enumerated().map { index, item in
             var o: [String: Any] = [
@@ -77,7 +86,7 @@ public struct ClaudeClassifier: Sendable {
                 "name": item.key.kind == .domain ? item.key.key : item.appName,
                 "app": item.appName,
             ]
-            if let title = item.sampleTitle { o["title"] = String(title.prefix(120)) }
+            if let title = safeTitle(item.sampleTitle) { o["title"] = title }
             return o
         }
         let listData = (try? JSONSerialization.data(withJSONObject: list, options: [.sortedKeys])) ?? Data("[]".utf8)
