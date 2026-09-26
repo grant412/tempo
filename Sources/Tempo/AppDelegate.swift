@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 exit(0)
             }
         }
+        NSApp.appearance = NSAppearance(named: .aqua)
         TempoModel.shared.start()
     }
 }
