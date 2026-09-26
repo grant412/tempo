@@ -12,6 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NSApp.appearance = NSAppearance(named: .aqua)
-        TempoModel.shared.start()
+        let model = TempoModel.shared
+        model.start()
+        Notifier.shared.start()
+        model.onNudge = { Notifier.shared.post($0) }
     }
 }
