@@ -159,14 +159,20 @@ struct StatusChip: View {
     }
 }
 
+/// A card's white rounded surface. The shadow sits on this shape alone, so nothing inside a card casts one.
+struct CardSurface: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 18).fill(Theme.panel).shadow(color: Theme.ink.opacity(0.06), radius: 15, y: 10)
+    }
+}
+
 struct Card: ViewModifier {
     var padding: EdgeInsets
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 18))
+            .background(CardSurface())
             .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.line, lineWidth: 1))
-            .shadow(color: Theme.ink.opacity(0.06), radius: 15, y: 10)
     }
 }
 
