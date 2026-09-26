@@ -34,7 +34,12 @@ public struct NudgeEngine: Sendable {
     private var distractionStart: Date?
     private var otherSince: Date?
     private var distractionFired = false
-    private var distractionNames: [String] = []
+    /// Seconds per display name in the current distraction streak, and the order names were first seen.
+    private var distractionTime: [String: TimeInterval] = [:]
+    private var distractionOrder: [String] = []
+    /// The Distraction name in front at the previous tick, and when that tick was.
+    /// Nil when the previous tick was not Distraction.
+    private var lastDistraction: (name: String, at: Date)?
 
     public init(settings: NudgeSettings = NudgeSettings()) {
         self.settings = settings
@@ -66,20 +71,32 @@ public struct NudgeEngine: Sendable {
                 out.append(Nudge(kind: .breakTime, at: now, minutes: settings.breakMinutes, since: start, names: []))
             }
 
+            // The time since the previous tick counts for what was in front then,
+            // the same way SegmentBuilder closes a segment at the next tick.
+            if let prev = lastDistraction {
+                distractionTime[prev.name, default: 0] += now.timeIntervalSince(prev.at)
+            }
+            lastDistraction = nil
+
             if category == .distraction {
                 if distractionStart == nil {
                     distractionStart = now
                     distractionFired = false
-                    distractionNames = []
+                    distractionTime = [:]
+                    distractionOrder = []
                 }
                 otherSince = nil
                 let name = snapshot.displayName
-                if !distractionNames.contains(name) { distractionNames.append(name) }
+                if distractionTime[name] == nil {
+                    distractionTime[name] = 0
+                    distractionOrder.append(name)
+                }
+                lastDistraction = (name, now)
                 if settings.distractionEnabled, !distractionFired, let start = distractionStart,
                    now.timeIntervalSince(start) >= TimeInterval(settings.distractionMinutes * 60) {
                     distractionFired = true
                     out.append(Nudge(kind: .distraction, at: now, minutes: settings.distractionMinutes,
-                                     since: start, names: Array(distractionNames.prefix(2))))
+                                     since: start, names: topDistractionNames()))
                 }
             } else if distractionStart != nil {
                 if let other = otherSince {
@@ -92,11 +109,25 @@ public struct NudgeEngine: Sendable {
         }
     }
 
+    /// The top one or two names by time in this streak; ties go to the name seen first.
+    private func topDistractionNames() -> [String] {
+        distractionOrder.enumerated()
+            .sorted { a, b in
+                let ta = distractionTime[a.element] ?? 0
+                let tb = distractionTime[b.element] ?? 0
+                return ta != tb ? ta > tb : a.offset < b.offset
+            }
+            .prefix(2)
+            .map(\.element)
+    }
+
     private mutating func endDistraction() {
         distractionStart = nil
         otherSince = nil
         distractionFired = false
-        distractionNames = []
+        distractionTime = [:]
+        distractionOrder = []
+        lastDistraction = nil
     }
 }
 

@@ -7,6 +7,7 @@ private func at(_ s: TimeInterval) -> Date { t0.addingTimeInterval(s) }
 private let work = Snapshot(bundleID: "com.apple.Terminal", appName: "Terminal", title: nil, domain: nil)
 private let yt = Snapshot(bundleID: "com.google.Chrome", appName: "Google Chrome", title: nil, domain: "youtube.com")
 private let x = Snapshot(bundleID: "com.google.Chrome", appName: "Google Chrome", title: nil, domain: "x.com")
+private let reddit = Snapshot(bundleID: "com.google.Chrome", appName: "Google Chrome", title: nil, domain: "reddit.com")
 
 private func run(_ e: inout NudgeEngine, from: TimeInterval, to: TimeInterval, _ snap: Snapshot, _ cat: CategoryID) -> [Nudge] {
     var out: [Nudge] = []
@@ -55,6 +56,19 @@ struct NudgeEngineTests {
         #expect(d[0].at == at(1200))
         #expect(d[0].names == ["youtube.com", "x.com"])
         #expect(d[0].since == at(0))
+    }
+
+    @Test func distractionNamesAreTopByTime() {
+        var e = NudgeEngine()
+        var fired = run(&e, from: 0, to: 5, x, .distraction)
+        fired += run(&e, from: 10, to: 15, reddit, .distraction)
+        fired += run(&e, from: 20, to: 1300, yt, .distraction)
+        let d = fired.filter { $0.kind == .distraction }
+        #expect(d.count == 1)
+        #expect(d[0].at == at(1200))
+        // Each gap between ticks counts for what was in front at the earlier tick:
+        // x.com 10 s, reddit.com 10 s, youtube.com 1180 s. The tie goes to x.com, seen first.
+        #expect(d[0].names == ["youtube.com", "x.com"])
     }
 
     @Test func distractionEndsAfterSixtySeconds() {
