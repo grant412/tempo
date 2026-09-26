@@ -17,5 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onNudge = { Notifier.shared.post($0) }
         model.start()
         ClassifierWorker.shared.start()
+
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: AppSettings.Keys.firstLaunchDone) {
+            defaults.set(true, forKey: AppSettings.Keys.firstLaunchDone)
+            WindowManager.shared.showTimeline()
+        }
     }
 }
