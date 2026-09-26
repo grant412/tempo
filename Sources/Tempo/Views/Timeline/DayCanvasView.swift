@@ -9,9 +9,14 @@ struct DayCanvasView: View {
             HStack(alignment: .center, spacing: 8) {
                 Text("Timeline").font(Theme.display(20)).kerning(-0.4)
                 Spacer()
-                Text("Click any block to see what was inside.").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
-                NudgeBadge(size: 18)
-                Text("nudge sent").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                // Narrow windows drop the hint sentence rather than wrap it.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        Text("Click any block to see what was inside.").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                        nudgeKey
+                    }
+                    nudgeKey
+                }
             }
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
@@ -23,9 +28,17 @@ struct DayCanvasView: View {
                 }
                 .onAppear { proxy.scrollTo(DayCanvas.anchorID, anchor: .center) }
                 .onChange(of: model.shownDay) { _, _ in proxy.scrollTo(DayCanvas.anchorID, anchor: .center) }
+                .onChange(of: model.scrollRequest) { _, _ in proxy.scrollTo(DayCanvas.anchorID, anchor: .center) }
             }
         }
         .card(EdgeInsets(top: 14, leading: 18, bottom: 12, trailing: 18))
+    }
+
+    private var nudgeKey: some View {
+        HStack(spacing: 8) {
+            NudgeBadge(size: 18)
+            Text("nudge sent").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+        }
     }
 }
 
@@ -69,9 +82,10 @@ struct DayCanvas: View {
                 }
 
                 ForEach(layout.gaps) { gap in
-                    AwayView(duration: gap.duration)
-                        .frame(width: width, height: max(0, y(gap.end) - y(gap.start) - 2))
-                        .offset(x: gutter, y: y(gap.start) + 1)
+                    let span = y(gap.end) - y(gap.start)
+                    AwayView(duration: gap.duration, span: span)
+                        .frame(width: width, height: max(0, span - 2))
+                        .offset(x: gutter, y: y(gap.start))
                 }
 
                 ForEach(layout.blocks) { block in
@@ -105,22 +119,22 @@ struct DayCanvas: View {
 
 struct AwayView: View {
     let duration: TimeInterval
+    /// The gap's full height in points; the label shows from 24 pt (the drawn section is 2 pt shorter).
+    let span: CGFloat
     var body: some View {
-        GeometryReader { g in
-            ZStack {
-                Canvas { ctx, size in
-                    var x = -size.height
-                    while x < size.width {
-                        var p = Path()
-                        p.move(to: CGPoint(x: x, y: size.height))
-                        p.addLine(to: CGPoint(x: x + size.height, y: 0))
-                        ctx.stroke(p, with: .color(Theme.chip), lineWidth: 5)
-                        x += 10
-                    }
+        ZStack {
+            Canvas { ctx, size in
+                var x = -size.height
+                while x < size.width {
+                    var p = Path()
+                    p.move(to: CGPoint(x: x, y: size.height))
+                    p.addLine(to: CGPoint(x: x + size.height, y: 0))
+                    ctx.stroke(p, with: .color(Theme.chip), lineWidth: 5)
+                    x += 10
                 }
-                if g.size.height >= 24 {
-                    Text("Away, \(Format.duration(duration))").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
-                }
+            }
+            if span >= 24 {
+                Text("Away, \(Format.duration(duration))").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))

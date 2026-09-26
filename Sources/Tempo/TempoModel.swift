@@ -26,6 +26,8 @@ final class TempoModel: ObservableObject {
     @Published private(set) var accessibilityGranted = true
     @Published private(set) var keyRejected = false
     @Published var selectedBlockID: Date?
+    /// Bumped to re-center the timeline on now (window shown again, Today pressed).
+    @Published var scrollRequest = 0
 
     let calendar = Calendar.current
     private(set) var store: Store?
@@ -224,7 +226,7 @@ final class TempoModel: ObservableObject {
         return Array(out.prefix(3))
     }
 
-    /// 8 AM to 6 PM, widened to the hour before the first activity and the hour after the last (or now).
+    /// 8 AM to 6 PM, widened to the hour before the first activity (or now, on today) and the hour after the last (or now).
     var visibleRange: DateInterval {
         let day = calendar.dateInterval(of: .day, for: shownDay)!
         var startHour = 8
@@ -232,6 +234,7 @@ final class TempoModel: ObservableObject {
         if let first = summary.firstActivity {
             startHour = min(startHour, max(0, calendar.component(.hour, from: first) - 1))
         }
+        if isShowingToday { startHour = min(startHour, max(0, calendar.component(.hour, from: now) - 1)) }
         let last = isShowingToday ? max(summary.lastActivity ?? now, now) : summary.lastActivity
         if let last { endHour = max(endHour, min(24, calendar.component(.hour, from: last) + 1)) }
         let start = calendar.date(byAdding: .hour, value: startHour, to: day.start)!
@@ -262,7 +265,10 @@ final class TempoModel: ObservableObject {
         goToDay(d)
     }
 
-    func goToToday() { goToDay(Date()) }
+    func goToToday() {
+        goToDay(Date())
+        scrollRequest += 1
+    }
 
     func select(_ block: Block) { selectedBlockID = block.id }
 

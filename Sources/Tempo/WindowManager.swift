@@ -13,6 +13,8 @@ final class WindowManager {
              minSize: NSSize(width: 1100, height: 720), transparentTitlebar: true) {
             AnyView(TimelineWindow().environmentObject(TempoModel.shared))
         }
+        // A reused window never fires onAppear again, so ask the canvas to re-center on now.
+        TempoModel.shared.scrollRequest += 1
     }
 
     func showSettings() {

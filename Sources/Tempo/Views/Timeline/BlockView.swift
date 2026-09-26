@@ -19,7 +19,8 @@ struct BlockView: View {
         .foregroundStyle(block.category.labelColor)
         .overlay {
             if selected {
-                RoundedRectangle(cornerRadius: 11).stroke(Theme.ink, lineWidth: 2).padding(-4)
+                RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.panel, lineWidth: 2).padding(-2)
+                RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.ink, lineWidth: 2).padding(-4)
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: 8))
