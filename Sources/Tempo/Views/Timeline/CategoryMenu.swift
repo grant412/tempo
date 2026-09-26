@@ -6,6 +6,11 @@ struct CategoryMenu: View {
     let current: CategoryID
     let onPick: (CategoryID) -> Void
 
+    /// One width for every label, so item names keep their room and durations line up.
+    /// Fits the widest label, "Distraction" in Geist semibold 12 (CoreText 63.6 pt, SwiftUI 64):
+    /// 8 padding + 8 swatch + 5 + 64 text + 5 + 11 chevron + 8 padding = 109, plus 3 pt of slack.
+    static let labelWidth: CGFloat = 112
+
     var body: some View {
         Menu {
             ForEach(CategoryID.assignable, id: \.self) { c in
@@ -18,11 +23,12 @@ struct CategoryMenu: View {
         } label: {
             HStack(spacing: 5) {
                 CategorySwatch(category: current, size: 8)
-                Text(current == .comms ? "Comms" : current.name).font(Theme.ui(12, .semibold))
+                Text(label).font(Theme.ui(12, .semibold)).lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
             }
             .padding(.horizontal, 8)
-            .frame(height: 28)
+            .frame(width: Self.labelWidth, height: 28)
             .background(Theme.panel, in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line))
             .foregroundStyle(Theme.ink)
@@ -31,6 +37,14 @@ struct CategoryMenu: View {
         .buttonStyle(.plain)
         .fixedSize()
         .accessibilityLabel("Category: \(current.name)")
+    }
+
+    private var label: String {
+        switch current {
+        case .uncategorized: "Pick one"
+        case .comms: "Comms"
+        default: current.name
+        }
     }
 }
 

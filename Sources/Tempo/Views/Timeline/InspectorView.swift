@@ -61,7 +61,7 @@ struct ItemRow: View {
     let maxDuration: TimeInterval
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Text(String(item.displayName.prefix(1)).uppercased())
                 .font(Theme.display(15))
                 .frame(width: 32, height: 32)
@@ -69,7 +69,7 @@ struct ItemRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(item.displayName).font(Theme.ui(13.5, .semibold)).lineLimit(1).truncationMode(.middle)
-                    Spacer(minLength: 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Text(Format.duration(item.duration)).font(Theme.mono(12))
                 }
                 GeometryReader { g in
@@ -112,6 +112,7 @@ struct NeedsCategoryPanel: View {
                 } label: {
                     Text("More").font(Theme.ui(12.5, .semibold))
                         .padding(.horizontal, 10).frame(height: 28)
+                        .contentShape(Capsule())
                         .overlay(Capsule().stroke(Theme.line))
                         .foregroundStyle(Theme.ink)
                 }
