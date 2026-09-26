@@ -83,8 +83,8 @@ public enum BlockBuilder {
             Block(start: $0.start, end: $0.end, category: $0.category, isLive: false,
                   items: items(for: $0.segments, resolver: resolver))
         }
-        if let openEnd = openSegmentEnd, let last = blocks.last,
-           abs(last.end.timeIntervalSince(min(openEnd, day.end))) < 1 {
+        if let openEnd = openSegmentEnd, openEnd >= day.start, openEnd < day.end, let last = blocks.last,
+           abs(last.end.timeIntervalSince(openEnd)) < 1 {
             blocks[blocks.count - 1].isLive = true
         }
 

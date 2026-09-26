@@ -53,4 +53,12 @@ struct BlockBuilderTests {
         #expect(layout.blocks.last?.isLive == true)
         #expect(layout.blocks.first?.isLive == false)
     }
+
+    @Test func pastDayIsNeverLive() {
+        let late = Segment(id: nil, start: F.at(23 * 60 + 50), end: F.at(24 * 60 + 20), snapshot: F.terminal)
+        let layout = BlockBuilder.build(segments: [late], day: F.day, resolver: F.resolver,
+                                        openSegmentEnd: F.at(24 * 60 + 20))
+        #expect(layout.blocks.count == 1)
+        #expect(layout.blocks.allSatisfy { !$0.isLive })
+    }
 }
