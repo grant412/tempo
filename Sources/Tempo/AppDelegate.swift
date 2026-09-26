@@ -1,0 +1,16 @@
+import AppKit
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let me = NSRunningApplication.current
+        if let id = Bundle.main.bundleIdentifier {
+            let others = NSRunningApplication.runningApplications(withBundleIdentifier: id)
+                .filter { $0.processIdentifier != me.processIdentifier }
+            if let other = others.first {
+                other.activate()
+                exit(0)
+            }
+        }
+        TempoModel.shared.start()
+    }
+}
