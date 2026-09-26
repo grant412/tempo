@@ -22,6 +22,7 @@ struct TimelineWindow: View {
             }
             .padding(20)
         }
+        .ignoresSafeArea(.container, edges: .top)
         .background(Theme.bg)
         .foregroundStyle(Theme.ink)
         .environment(\.colorScheme, .light)

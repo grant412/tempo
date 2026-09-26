@@ -50,7 +50,7 @@ struct WeekDayColumn: View {
                         }
                     }
                 }
-                .frame(width: 12, height: 84)
+                .frame(width: 12, height: 84, alignment: .bottom)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 Text(date)
                     .font(Theme.mono(12, .semibold))
