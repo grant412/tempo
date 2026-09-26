@@ -62,4 +62,43 @@ struct SegmentBuilderTests {
         let e = b.tick(at: at(0.5), presence: .away)
         #expect(e == [.discarded(Segment(id: nil, start: at(0), end: at(0.5), snapshot: term))])
     }
+
+    @Test func titleChangeWithinSameAppExtends() {
+        var b = SegmentBuilder()
+        _ = b.tick(at: at(0), presence: .active(term))
+        var retitled = term
+        retitled.title = "make"
+        let e = b.tick(at: at(5), presence: .active(retitled))
+        #expect(e == [.extended(Segment(id: nil, start: at(0), end: at(5), snapshot: term))])
+        #expect(b.open?.snapshot.title == "zsh")
+        #expect(b.open?.start == at(0))
+    }
+
+    @Test func idleAfterTitleChurnTrimsWholeRun() {
+        var b = SegmentBuilder()
+        var a = term
+        a.title = "a"
+        var bTitle = term
+        bTitle.title = "b"
+        var events: [SegmentEvent] = []
+        // Input stops at 100 s; the title keeps changing with no input until idle reaches 300 s.
+        for (i, s) in stride(from: 0.0, through: 395, by: 5).enumerated() {
+            events += b.tick(at: at(s), presence: .active(i.isMultiple(of: 2) ? a : bTitle))
+        }
+        events += b.tick(at: at(400), presence: .idle(lastInput: at(100)))
+        let closed = events.filter { if case .closed = $0 { true } else { false } }
+        #expect(closed == [.closed(Segment(id: nil, start: at(0), end: at(100), snapshot: a))])
+        #expect(!events.contains { if case .discarded = $0 { true } else { false } })
+        #expect(b.open == nil)
+    }
+
+    @Test func nilTitleAdoptsLaterTitle() {
+        var b = SegmentBuilder()
+        var untitled = term
+        untitled.title = nil
+        _ = b.tick(at: at(0), presence: .active(untitled))
+        let e = b.tick(at: at(5), presence: .active(term))
+        #expect(e == [.extended(Segment(id: nil, start: at(0), end: at(5), snapshot: term))])
+        #expect(b.open?.snapshot.title == "zsh")
+    }
 }

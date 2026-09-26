@@ -201,7 +201,7 @@ Tick every 5 seconds (timer tolerance 1s). Each tick:
    no domain.
 
 Segment rules (`SegmentBuilder`):
-- A segment is one unbroken run of the same (bundle id, title, domain).
+- A segment is one unbroken run of the same (bundle id, domain). Title changes extend it; it keeps the first title seen, since titles are only used as a classifier sample.
 - A change at tick t closes the old segment at t and opens a new one at t.
 - Going idle closes the segment at the last input time (now minus idle seconds), so idle
   minutes never count.

@@ -39,8 +39,11 @@ public struct SegmentBuilder: Sendable {
         case .idle(let lastInput):
             events += close(at: min(lastInput, now))
         case .active(let snapshot):
-            if var seg = open, seg.snapshot == snapshot {
+            if var seg = open,
+               seg.snapshot.bundleID == snapshot.bundleID,
+               seg.snapshot.domain == snapshot.domain {
                 seg.end = now
+                if seg.snapshot.title == nil { seg.snapshot.title = snapshot.title }
                 open = seg
                 events.append(.extended(seg))
             } else {
