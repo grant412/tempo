@@ -93,7 +93,7 @@ struct PauseSection: View {
                 HStack(spacing: 6) {
                     SmallButton("30 min", fill: true) { model.pause(for: 1800) }
                     SmallButton("1 hour", fill: true) { model.pause(for: 3600) }
-                    SmallButton("Until tomorrow", fill: true) { model.pause(for: nil) }
+                    SmallButton("Until tomorrow") { model.pause(for: nil) }.fixedSize()
                 }
             }
         }

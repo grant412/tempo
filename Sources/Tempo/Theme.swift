@@ -98,7 +98,8 @@ struct CategoryBarRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: 5)
-            Text(Format.duration(total.duration)).font(Theme.mono(12)).frame(width: 50, alignment: .trailing)
+            Text(Format.duration(total.duration)).font(Theme.mono(12)).lineLimit(1)
+                .frame(width: 58, alignment: .trailing)
         }
         .frame(height: 26)
         .foregroundStyle(Theme.ink)
@@ -132,6 +133,7 @@ struct SmallButton: View {
         Button(action: action) {
             Text(title)
                 .font(Theme.ui(13, .semibold))
+                .lineLimit(1)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: fill ? .infinity : nil)
                 .frame(height: 32)
