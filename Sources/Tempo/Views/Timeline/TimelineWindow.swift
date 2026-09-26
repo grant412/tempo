@@ -1,5 +1,30 @@
 import SwiftUI
 
 struct TimelineWindow: View {
-    var body: some View { Text("Timeline").frame(minWidth: 1100, minHeight: 720) }
+    @EnvironmentObject var model: TempoModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TimelineToolbar()
+            HStack(alignment: .top, spacing: 20) {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        WeekStripView()
+                        DayStatsView()
+                        CategoryListView()
+                    }
+                    .padding(.bottom, 20)
+                }
+                .scrollIndicators(.never)
+                .frame(width: 272)
+                DayCanvasView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                InspectorView().frame(width: 330)
+            }
+            .padding(20)
+        }
+        .background(Theme.bg)
+        .foregroundStyle(Theme.ink)
+        .environment(\.colorScheme, .light)
+        .frame(minWidth: 1100, minHeight: 720)
+    }
 }
