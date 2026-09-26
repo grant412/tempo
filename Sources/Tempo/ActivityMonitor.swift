@@ -51,7 +51,9 @@ final class ActivityMonitor {
             domain = Domain.normalize(url)
             if let tabTitle, !tabTitle.isEmpty { title = String(tabTitle.prefix(300)) }
         case nil:
-            break
+            // A browser whose tab read failed (Automation denied, timeout, error) records no
+            // title, so an incognito window's title can never slip in through Accessibility.
+            if BrowserTabReader.supported.contains(bundleID) { title = nil }
         }
         return .active(Snapshot(bundleID: bundleID, appName: app.localizedName ?? bundleID,
                                 title: title, domain: domain))

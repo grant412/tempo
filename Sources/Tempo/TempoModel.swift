@@ -105,6 +105,7 @@ final class TempoModel: ObservableObject {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = text
+        NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
 
