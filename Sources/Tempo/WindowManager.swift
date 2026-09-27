@@ -7,6 +7,8 @@ import SwiftUI
 final class WindowManager {
     static let shared = WindowManager()
     private var windows: [String: NSWindow] = [:]
+    /// The session the focus notes window was last shown for.
+    private var focusNotesSessionID: Int64?
 
     func showTimeline() {
         show(id: "timeline", title: "Tempo", size: NSSize(width: 1280, height: 820),
@@ -24,14 +26,19 @@ final class WindowManager {
         }
     }
 
-    /// One notes window. Showing it for another session swaps in that session's view.
+    /// One notes window. Showing it for another session swaps in that session's view. Showing it
+    /// again for the session it has open only brings it forward, so a draft being typed survives.
     func showFocusNotes(sessionID: Int64) {
         let size = NSSize(width: 440, height: 560)
         let root = AnyView(FocusNotesView(sessionID: sessionID).environmentObject(TempoModel.shared))
         if let existing = windows["focus-notes"] {
-            existing.contentViewController = NSHostingController(rootView: root)
-            existing.setContentSize(size)
+            let isOpen = existing.isVisible || existing.isMiniaturized
+            if !(isOpen && focusNotesSessionID == sessionID) {
+                existing.contentViewController = NSHostingController(rootView: root)
+                existing.setContentSize(size)
+            }
         }
+        focusNotesSessionID = sessionID
         show(id: "focus-notes", title: "Focus notes", size: size,
              minSize: NSSize(width: 400, height: 460), transparentTitlebar: false) { root }
     }
@@ -44,6 +51,7 @@ final class WindowManager {
                       transparentTitlebar: Bool, content: () -> AnyView) {
         NSApp.activate(ignoringOtherApps: true)
         if let existing = windows[id] {
+            if existing.isMiniaturized { existing.deminiaturize(nil) }
             existing.makeKeyAndOrderFront(nil)
             return
         }
