@@ -28,6 +28,8 @@ struct MenuBarView: View {
                 }
             }
 
+            FocusTimerSection()
+
             PauseSection()
 
             Button { WindowManager.shared.showTimeline() } label: {

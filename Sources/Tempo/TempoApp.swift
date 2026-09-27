@@ -6,6 +6,7 @@ import TempoCore
 struct TempoApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @ObservedObject private var model = TempoModel.shared
+    @ObservedObject private var focus = FocusController.shared
 
     init() {
         if CommandLine.arguments.contains("--write-launch-agent") {
@@ -21,9 +22,9 @@ struct TempoApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView().environmentObject(model)
+            MenuBarView().environmentObject(model).environmentObject(focus)
         } label: {
-            MenuBarLabel().environmentObject(model)
+            MenuBarLabel().environmentObject(model).environmentObject(focus)
         }
         .menuBarExtraStyle(.window)
     }
