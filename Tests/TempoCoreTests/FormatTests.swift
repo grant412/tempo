@@ -31,4 +31,39 @@ struct FormatTests {
         #expect(Format.hourLabel(12) == "12 PM")
         #expect(Format.hourLabel(18) == "6 PM")
     }
+
+    @Test func countdownUnderAnHour() {
+        #expect(Format.countdown(1500) == "25:00")
+        #expect(Format.countdown(1452.3) == "24:13")
+        #expect(Format.countdown(300) == "5:00")
+        #expect(Format.countdown(7) == "0:07")
+        #expect(Format.countdown(0.2) == "0:01")
+        #expect(Format.countdown(0) == "0:00")
+        #expect(Format.countdown(-5) == "0:00")
+    }
+
+    @Test func countdownWithHours() {
+        #expect(Format.countdown(3600) == "1:00:00")
+        #expect(Format.countdown(7152) == "1:59:12")
+        #expect(Format.countdown(7200) == "2:00:00")
+    }
+
+    @Test func countdownIgnoresFloatingPointDust() {
+        let start = Date(timeIntervalSinceReferenceDate: 780_000_000.123)
+        let t = FocusTimer(start: start, planned: 1500)
+        #expect(Format.countdown(t.remaining(at: start)) == "25:00")
+    }
+
+    @Test func minutesLabels() {
+        #expect(Format.minutesLabel(300) == "5 min")
+        #expect(Format.minutesLabel(900) == "15 min")
+        #expect(Format.minutesLabel(1800) == "30 min")
+        #expect(Format.minutesLabel(2700) == "45 min")
+        #expect(Format.minutesLabel(1080) == "18 min")
+        #expect(Format.minutesLabel(20) == "1 min")
+        #expect(Format.minutesLabel(3600) == "1 hour")
+        #expect(Format.minutesLabel(7200) == "2 hours")
+        #expect(Format.minutesLabel(36000) == "10 hours")
+        #expect(Format.minutesLabel(5400) == "1h 30m")
+    }
 }

@@ -146,3 +146,25 @@ public struct ClassifyAttempt: Equatable, Sendable {
     public let failures: Int
     public init(lastTry: Date, failures: Int) { self.lastTry = lastTry; self.failures = failures }
 }
+
+/// A finished focus timer, saved when it ends (focus timer spec 4.1).
+public struct FocusSession: Equatable, Identifiable, Sendable {
+    public let id: Int64
+    public let start: Date
+    public let end: Date
+    public let planned: TimeInterval
+    public var note: String?
+
+    public init(id: Int64, start: Date, end: Date, planned: TimeInterval, note: String?) {
+        self.id = id
+        self.start = start
+        self.end = end
+        self.planned = planned
+        self.note = note
+    }
+
+    public var duration: TimeInterval { end.timeIntervalSince(start) }
+    /// Ended with End now at least a second before the planned end.
+    public var endedEarly: Bool { duration < planned - 1 }
+    public var interval: DateInterval { DateInterval(start: start, end: max(start, end)) }
+}
