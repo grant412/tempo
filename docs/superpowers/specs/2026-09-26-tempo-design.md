@@ -201,7 +201,7 @@ Tick every 5 seconds (timer tolerance 1s). Each tick:
    no domain.
 
 Segment rules (`SegmentBuilder`):
-- A segment is one unbroken run of the same (bundle id, domain). Title changes extend it; it keeps the first title seen, since titles are only used as a classifier sample.
+- A segment is one unbroken run of the same (bundle id, domain). Title changes extend it; it keeps the first non-empty title seen, since titles are only used as a classifier sample.
 - A change at tick t closes the old segment at t and opens a new one at t.
 - Going idle closes the segment at the last input time (now minus idle seconds), so idle
   minutes never count.
@@ -365,7 +365,7 @@ Swift Testing on `TempoCore` with a fake clock and an in-memory SQLite database:
   over Claude over default precedence, browsers falling to Uncategorized.
 - BlockBuilder: runs, 60 second joins, the 2 minute fold, away gaps, midnight clipping,
   live flag, item aggregation.
-- DaySummary and week bars against the mockup's sample day (8h 41m, Code 4h 14m, and so on).
+- DaySummary and week bars against the mockup's sample day (9h 05m, Code 4h 23m, and so on).
 - NudgeEngine: break fires once at 90, re-arms after a 5 minute break; distraction survives
   a 45 second interruption, ends after 60 seconds, fires once.
 - Store: migrations from empty, flush and update of the open segment, rule upsert rules,
