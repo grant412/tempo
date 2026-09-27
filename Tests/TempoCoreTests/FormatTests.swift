@@ -49,9 +49,8 @@ struct FormatTests {
     }
 
     @Test func countdownIgnoresFloatingPointDust() {
-        let start = Date(timeIntervalSinceReferenceDate: 780_000_000.123)
-        let t = FocusTimer(start: start, planned: 1500)
-        #expect(Format.countdown(t.remaining(at: start)) == "25:00")
+        #expect(Format.countdown(1500 + 1e-7) == "25:00")
+        #expect(Format.countdown(1499 + 2e-7) == "24:59")
     }
 
     @Test func minutesLabels() {
