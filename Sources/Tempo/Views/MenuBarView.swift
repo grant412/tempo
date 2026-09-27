@@ -83,7 +83,13 @@ struct PauseSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Eyebrow(text: "Pause tracking")
-            if let until = model.pausedUntil {
+            if model.isStopped {
+                HStack {
+                    Text("Tracking stopped").font(Theme.ui(13.5, .semibold))
+                    Spacer()
+                    SmallButton("Resume") { model.resume() }
+                }
+            } else if let until = model.pausedUntil {
                 HStack {
                     Text("Paused until \(Format.clock(until))").font(Theme.ui(13.5, .semibold))
                     Spacer()
@@ -95,6 +101,7 @@ struct PauseSection: View {
                     SmallButton("1 hour", fill: true) { model.pause(for: 3600) }
                     SmallButton("Until tomorrow") { model.pause(for: nil) }.fixedSize()
                 }
+                SmallButton("Stop tracking", fill: true) { model.stop() }
             }
         }
     }

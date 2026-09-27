@@ -237,7 +237,8 @@ final class TempoModel: ObservableObject {
 
     var isPaused: Bool { pausedUntil.map { Date() < $0 } ?? false }
     var isShowingToday: Bool { calendar.isDate(shownDay, inSameDayAs: now) }
-    var menuBarText: String { isPaused ? "Paused" : Format.duration(today.total) }
+    var isStopped: Bool { pausedUntil == .distantFuture }
+    var menuBarText: String { isStopped ? "Stopped" : isPaused ? "Paused" : Format.duration(today.total) }
     var selectedBlock: Block? { layout.blocks.first { $0.id == selectedBlockID } }
 
     var dayTitle: String {
@@ -322,6 +323,12 @@ final class TempoModel: ObservableObject {
 
     func resume() {
         pausedUntil = nil
+        monitor.tickNow()
+    }
+
+    /// A pause with no end: tracking stays off until Resume. Not saved, so a relaunch tracks again.
+    func stop() {
+        pausedUntil = .distantFuture
         monitor.tickNow()
     }
 

@@ -67,7 +67,8 @@ struct IconButton: View {
 struct StatusPill: View {
     @EnvironmentObject var model: TempoModel
     var body: some View {
-        let (text, color): (String, Color) = model.isPaused ? ("Paused", Theme.muted)
+        let (text, color): (String, Color) = model.isStopped ? ("Stopped", Theme.muted)
+            : model.isPaused ? ("Paused", Theme.muted)
             : model.accessibilityGranted ? ("Tracking", Color(hex: "#2fb35e")) : ("Needs permission", Color(hex: "#c0382f"))
         return HStack(spacing: 8) {
             Circle().fill(color).frame(width: 7, height: 7)
