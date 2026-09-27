@@ -1,7 +1,7 @@
 # Tempo: Stop tracking and focus timer (design)
 
 Date: 2026-09-26
-Status: approved design, ready for implementation plan
+Status: implemented on tempo-focus-timer, live checks pending
 Builds on: `2026-09-26-tempo-design.md` (sections 4.1 menu bar, 4.2 timeline, 7.1 store)
 Branch: `tempo-focus-timer`, off `tempo-v1`
 

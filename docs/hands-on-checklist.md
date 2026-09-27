@@ -81,3 +81,6 @@ Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
 - [ ] Discard: nothing appears on the timeline.
 - [ ] Let a 5 min timer run out: "Timer done" banner with sound and a "Write down what you got done" button. The button and a banner click both open the notes window.
 - [ ] Timeline: the band spans the session with a clock badge. Hover shows the note. Click opens the notes window with the note filled in.
+- [ ] Sleep through a run-out: the banner shows on wake and the session ends at the planned end.
+- [ ] A timer run while tracking is stopped, outside the usual hours, still shows its band on the timeline.
+- [ ] Custom field inside the popover takes typing and Return.
