@@ -39,7 +39,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    /// "Timer done", "25 min, 2:10 to 2:35 PM", with a button to write notes (focus timer spec 3.3).
+    /// "Timer done", "25 min, 2:10 PM to 2:35 PM", with a button to write notes (focus timer spec 3.3).
     func postTimerDone(_ session: FocusSession) {
         guard available else { return }
         let content = UNMutableNotificationContent()

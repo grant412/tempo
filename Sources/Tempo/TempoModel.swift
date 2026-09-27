@@ -23,6 +23,7 @@ final class TempoModel: ObservableObject {
     @Published private(set) var focusSessions: [FocusSession] = []
     @Published private(set) var needsCategory: NeedsCategory?
     @Published private(set) var rules: [Rule] = []
+    /// `.distantFuture` means Stop tracking (check `isStopped` before formatting it as a time).
     @Published private(set) var pausedUntil: Date?
     @Published private(set) var accessibilityGranted = true
     @Published private(set) var keyRejected = false
@@ -298,7 +299,8 @@ final class TempoModel: ObservableObject {
 
     /// What tracking recorded during the session, counting the open segment.
     func recap(for session: FocusSession) -> SessionRecap {
-        let segs = (try? store?.segments(overlapping: session.interval)) ?? []
+        var segs: [Segment] = []
+        do { segs = try store?.segments(overlapping: session.interval) ?? [] } catch { Log.error("recap: \(error)") }
         return SessionRecap.make(segments: withLive(segs), interval: session.interval, resolver: resolver)
     }
 
