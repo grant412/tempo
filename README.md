@@ -5,8 +5,9 @@ browser tab in front, sorts time into categories, and shows the day as a vertica
 Nudges after long stretches and distraction streaks. Everything stays on this Mac except a
 one-time Claude lookup for apps and sites it has never seen (only with an API key in Settings).
 
-Design: `docs/superpowers/specs/2026-09-26-tempo-design.md`
-Plan: `docs/superpowers/plans/2026-09-26-tempo.md`
+Design: `docs/superpowers/specs/2026-09-26-tempo-design.md`, plus
+`docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md` (Stop tracking and focus timer)
+Plans: `docs/superpowers/plans/2026-09-26-tempo.md`, `docs/superpowers/plans/2026-09-26-tempo-focus-timer.md`
 
 ## Build and install
 

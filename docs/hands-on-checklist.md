@@ -66,3 +66,18 @@ so none of this has run on the real machine yet. Work top to bottom; the setup s
 - [ ] Crash restart: `kill -9 $(pgrep -x Tempo)`, then within 15 s a new pid. Quit from the menu stays quit. `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo` brings it back.
 - [ ] Optional: restart the Mac; Tempo is in the menu bar after login.
 - [ ] Leave it running past midnight: the timeline rolls to the new day and yesterday is intact.
+
+## Stop tracking and focus timer
+
+Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
+
+- [ ] Stop tracking: menu bar reads "Stopped", the row reads "Tracking stopped" with Resume, the toolbar pill says Stopped. No new segments while stopped. Resume tracks again.
+- [ ] Stop, then quit and relaunch: Tempo tracks again.
+- [ ] Hover "Start a timer": the popover opens beside it after a moment. Passing quickly over the row does not open it. Clicking outside closes it.
+- [ ] Each preset starts the right length. Custom: 45 works; 0, 601, 4.5, and letters keep Start disabled; Return starts it.
+- [ ] Menu bar shows the total, then the clock and time left, ticking every second without jitter. Over an hour shows h:mm:ss.
+- [ ] Stopping or pausing tracking leaves a running timer counting.
+- [ ] End now: the notes window opens with the recap and "N min of M". Save stores the note.
+- [ ] Discard: nothing appears on the timeline.
+- [ ] Let a 5 min timer run out: "Timer done" banner with sound and a "Write down what you got done" button. The button and a banner click both open the notes window.
+- [ ] Timeline: the band spans the session with a clock badge. Hover shows the note. Click opens the notes window with the note filled in.
