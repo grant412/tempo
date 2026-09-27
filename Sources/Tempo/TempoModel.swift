@@ -20,6 +20,7 @@ final class TempoModel: ObservableObject {
     @Published private(set) var liveBlock: Block?
     @Published private(set) var week: [WeekDay] = []
     @Published private(set) var nudgeMarks: [NudgeRecord] = []
+    @Published private(set) var focusSessions: [FocusSession] = []
     @Published private(set) var needsCategory: NeedsCategory?
     @Published private(set) var rules: [Rule] = []
     @Published private(set) var pausedUntil: Date?
@@ -205,6 +206,7 @@ final class TempoModel: ObservableObject {
                 liveBlock = todayLayout.blocks.last(where: \.isLive)
             }
             nudgeMarks = try store.nudges(in: day)
+            focusSessions = try store.focusSessions(overlapping: day)
             needsCategory = computeNeedsCategory(daySegs, day: day)
             if selectedBlockID == nil || !layout.blocks.contains(where: { $0.id == selectedBlockID }) {
                 selectedBlockID = (layout.blocks.last(where: \.isLive) ?? summary.longestBlock)?.id
@@ -269,6 +271,39 @@ final class TempoModel: ObservableObject {
         let start = calendar.date(byAdding: .hour, value: startHour, to: day.start)!
         let end = endHour >= 24 ? day.end : calendar.date(byAdding: .hour, value: endHour, to: day.start)!
         return DateInterval(start: start, end: end)
+    }
+
+    // MARK: Focus sessions
+
+    /// Writes a finished timer. Returns nil (and logs) if the write fails.
+    func saveFocusSession(_ timer: FocusTimer, end: Date) -> FocusSession? {
+        guard let store else { return nil }
+        do {
+            let id = try store.insertFocusSession(start: timer.start, end: end, planned: timer.planned)
+            refresh()
+            return FocusSession(id: id, start: timer.start, end: end, planned: timer.planned, note: nil)
+        } catch {
+            Log.error("save focus session: \(error)")
+            return nil
+        }
+    }
+
+    func focusSession(id: Int64) -> FocusSession? {
+        do { return try store?.focusSession(id: id) } catch {
+            Log.error("focus session: \(error)")
+            return nil
+        }
+    }
+
+    func setFocusNote(id: Int64, note: String) {
+        do { try store?.setFocusNote(id: id, note: note) } catch { Log.error("focus note: \(error)") }
+        refresh()
+    }
+
+    /// What tracking recorded during the session, counting the open segment.
+    func recap(for session: FocusSession) -> SessionRecap {
+        let segs = (try? store?.segments(overlapping: session.interval)) ?? []
+        return SessionRecap.make(segments: withLive(segs), interval: session.interval, resolver: resolver)
     }
 
     // MARK: Actions

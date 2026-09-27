@@ -24,6 +24,22 @@ final class WindowManager {
         }
     }
 
+    /// One notes window. Showing it for another session swaps in that session's view.
+    func showFocusNotes(sessionID: Int64) {
+        let size = NSSize(width: 440, height: 560)
+        let root = AnyView(FocusNotesView(sessionID: sessionID).environmentObject(TempoModel.shared))
+        if let existing = windows["focus-notes"] {
+            existing.contentViewController = NSHostingController(rootView: root)
+            existing.setContentSize(size)
+        }
+        show(id: "focus-notes", title: "Focus notes", size: size,
+             minSize: NSSize(width: 400, height: 460), transparentTitlebar: false) { root }
+    }
+
+    func closeFocusNotes() {
+        windows["focus-notes"]?.close()
+    }
+
     private func show(id: String, title: String, size: NSSize, minSize: NSSize,
                       transparentTitlebar: Bool, content: () -> AnyView) {
         NSApp.activate(ignoringOtherApps: true)
