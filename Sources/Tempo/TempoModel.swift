@@ -12,7 +12,7 @@ final class TempoModel: ObservableObject {
         let duration: TimeInterval
     }
 
-    @Published private(set) var shownDay = Calendar.current.startOfDay(for: Date())
+    @Published private(set) var shownDay = Calendar.autoupdatingCurrent.startOfDay(for: Date())
     @Published private(set) var now = Date()
     @Published private(set) var layout = DayLayout.empty
     @Published private(set) var summary = DaySummary.empty
@@ -29,7 +29,8 @@ final class TempoModel: ObservableObject {
     /// Bumped to re-center the timeline on now (window shown again, Today pressed).
     @Published var scrollRequest = 0
 
-    let calendar = Calendar.current
+    /// Follows time zone changes, so day boundaries move after travel.
+    let calendar = Calendar.autoupdatingCurrent
     private(set) var store: Store?
     private(set) var resolver = RuleResolver(rules: [])
     private(set) var queue: ClassifierQueue?
@@ -59,6 +60,12 @@ final class TempoModel: ObservableObject {
         monitor.isPaused = { [weak self] in self?.isPaused ?? false }
         monitor.onTick = { [weak self] now, presence in self?.handleTick(now: now, presence: presence) }
         monitor.start()
+    }
+
+    /// A final away tick on quit closes the open segment and writes its end.
+    func shutdown() {
+        guard started else { return }
+        handleTick(now: Date(), presence: .away)
     }
 
     /// A lock held by another program is retried, then reported with the files left in place.
