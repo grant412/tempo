@@ -62,6 +62,8 @@ struct DayCanvas: View {
     let onSelect: (Block) -> Void
 
     private let gutter: CGFloat = 64
+    /// Left edge of a focus band; the bar sits at x 58 to 61, just left of the block column.
+    private let bandX: CGFloat = 51.5
     private func y(_ d: Date) -> CGFloat { CGFloat(d.timeIntervalSince(range.start) / 60) }
     private var height: CGFloat { CGFloat(range.duration / 60) }
     private var hours: [Date] { stride(from: 0, through: range.duration, by: 3600).map { range.start.addingTimeInterval($0) } }
@@ -116,11 +118,12 @@ struct DayCanvas: View {
                     let top = y(max(s.start, range.start))
                     let bottom = y(min(s.end, range.end))
                     if bottom > top {
-                        FocusBand(height: bottom - top)
+                        // Clickable up to x 63, so the blocks from the gutter (x 64) keep their clicks.
+                        FocusBand(height: bottom - top, hitWidth: gutter - 1 - bandX)
                             .help(s.note ?? "Focus timer, \(Format.minutesLabel(s.planned)), no notes yet")
                             .onTapGesture { WindowManager.shared.showFocusNotes(sessionID: s.id) }
                             // Bar centered at x 59.5 (the grid line starts at 58); badge centered on its top.
-                            .offset(x: 51.5, y: top - 8)
+                            .offset(x: bandX, y: top - 8)
                             .zIndex(2)
                     }
                 }
@@ -177,13 +180,16 @@ struct NudgeBadge: View {
 /// A focus session: a 3 pt ink bar down the gutter with a clock badge on its top.
 struct FocusBand: View {
     let height: CGFloat
+    /// How much of the 16 pt width, from the left, takes clicks. The badge's right edge overlaps
+    /// the block column, so the canvas passes less than 16.
+    let hitWidth: CGFloat
     var body: some View {
         ZStack(alignment: .top) {
             Rectangle().fill(Theme.ink).frame(width: 3, height: height).offset(y: 8)
             FocusBadge(size: 16)
         }
         .frame(width: 16, height: height + 8, alignment: .top)
-        .contentShape(Rectangle())
+        .contentShape(Rectangle().size(width: hitWidth, height: height + 8))
     }
 }
 
