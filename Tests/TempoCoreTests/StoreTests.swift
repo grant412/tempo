@@ -10,7 +10,7 @@ private let yt = Snapshot(bundleID: "com.google.Chrome", appName: "Google Chrome
 struct StoreTests {
     @Test func migratesFreshDatabase() throws {
         let store = try Store(path: ":memory:")
-        #expect(try store.meta("schema_version") == "1")
+        #expect(try store.meta("schema_version") == "2")
     }
 
     @Test func segmentInsertUpdateQueryDelete() throws {
@@ -100,7 +100,7 @@ struct StoreTests {
         #expect(FileManager.default.fileExists(atPath: path + "-wal"))
         store = nil
         let reopened = try Store(path: path)
-        #expect(try reopened.meta("schema_version") == "1")
+        #expect(try reopened.meta("schema_version") == "2")
         #expect(try reopened.segments(overlapping: DateInterval(start: d(0), end: d(100)))
             == [Segment(id: id, start: d(0), end: d(90), snapshot: term)])
     }
@@ -129,5 +129,58 @@ struct StoreTests {
         }
         #expect(code == SQLITE_CANTOPEN)
         #expect(error?.isUnreadableDatabase == false)
+    }
+
+    @Test func focusSessionsInsertNoteAndOverlap() throws {
+        let store = try Store(path: ":memory:")
+        let a = try store.insertFocusSession(start: d(0), end: d(1500), planned: 1500)
+        let b = try store.insertFocusSession(start: d(5000), end: d(5600), planned: 900)
+        try store.setFocusNote(id: a, note: "  Shipped the timer \n")
+        try store.setFocusNote(id: b, note: "   \n ")
+        #expect(try store.focusSession(id: a)
+            == FocusSession(id: a, start: d(0), end: d(1500), planned: 1500, note: "Shipped the timer"))
+        #expect(try store.focusSession(id: b)?.note == nil)
+        #expect(try store.focusSession(id: 999) == nil)
+        #expect(try store.focusSessions(overlapping: DateInterval(start: d(1000), end: d(2000))).map(\.id) == [a])
+        #expect(try store.focusSessions(overlapping: DateInterval(start: d(0), end: d(9000))).map(\.id) == [a, b])
+        #expect(try store.focusSessions(overlapping: DateInterval(start: d(1500), end: d(4999))).isEmpty)
+        try store.setFocusNote(id: a, note: nil)
+        #expect(try store.focusSession(id: a)?.note == nil)
+    }
+
+    /// A database from v1 (no focus_sessions) upgrades in place and keeps its rows.
+    @Test func upgradesVersionOneDatabase() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("tempo-v1-\(UUID().uuidString).db").path
+        defer { for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: path + suffix) } }
+        var raw: OpaquePointer?
+        #expect(sqlite3_open(path, &raw) == SQLITE_OK)
+        let v1 = """
+            CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE segments(
+              id INTEGER PRIMARY KEY, start REAL NOT NULL, end REAL NOT NULL,
+              bundle_id TEXT NOT NULL, app_name TEXT NOT NULL, title TEXT, domain TEXT);
+            CREATE INDEX segments_start ON segments(start);
+            CREATE TABLE rules(
+              kind TEXT NOT NULL CHECK(kind IN ('app','domain')), key TEXT NOT NULL,
+              category_id TEXT, source TEXT NOT NULL CHECK(source IN ('default','user','claude')),
+              updated_at REAL NOT NULL, PRIMARY KEY(kind, key));
+            CREATE TABLE nudges(id INTEGER PRIMARY KEY, at REAL NOT NULL,
+              kind TEXT NOT NULL CHECK(kind IN ('break','distraction')));
+            CREATE TABLE classify_attempts(kind TEXT NOT NULL, key TEXT NOT NULL,
+              last_try REAL NOT NULL, failures INTEGER NOT NULL, PRIMARY KEY(kind, key));
+            INSERT INTO meta(key, value) VALUES('schema_version', '1');
+            INSERT INTO segments(start, end, bundle_id, app_name, title, domain)
+              VALUES(1000000, 1000090, 'com.apple.Terminal', 'Terminal', 'zsh', NULL);
+            """
+        #expect(sqlite3_exec(raw, v1, nil, nil, nil) == SQLITE_OK)
+        sqlite3_close(raw)
+
+        let store = try Store(path: path)
+        #expect(try store.meta("schema_version") == "2")
+        #expect(try store.segments(overlapping: DateInterval(start: d(0), end: d(100)))
+            == [Segment(id: 1, start: d(0), end: d(90), snapshot: term)])
+        let id = try store.insertFocusSession(start: d(0), end: d(1500), planned: 1500)
+        #expect(try store.focusSession(id: id)?.planned == 1500)
     }
 }

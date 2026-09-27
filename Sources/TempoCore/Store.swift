@@ -130,6 +130,43 @@ public final class Store {
         }
     }
 
+    // MARK: Focus sessions
+
+    @discardableResult
+    public func insertFocusSession(start: Date, end: Date, planned: TimeInterval) throws -> Int64 {
+        try run("INSERT INTO focus_sessions(start, end, planned) VALUES(?, ?, ?)",
+                [start.timeIntervalSince1970, end.timeIntervalSince1970, planned])
+        return sqlite3_last_insert_rowid(db)
+    }
+
+    /// Trims the note; empty or whitespace-only stores no note.
+    public func setFocusNote(id: Int64, note: String?) throws {
+        let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value: String? = (trimmed?.isEmpty ?? true) ? nil : trimmed
+        try run("UPDATE focus_sessions SET note = ? WHERE id = ?", [value, id])
+    }
+
+    public func focusSession(id: Int64) throws -> FocusSession? {
+        try query("SELECT id, start, end, planned, note FROM focus_sessions WHERE id = ?", [id],
+                  Self.focusRow).first
+    }
+
+    public func focusSessions(overlapping interval: DateInterval) throws -> [FocusSession] {
+        try query("""
+            SELECT id, start, end, planned, note FROM focus_sessions
+            WHERE start < ? AND end > ? ORDER BY start
+            """, [interval.end.timeIntervalSince1970, interval.start.timeIntervalSince1970],
+                  Self.focusRow)
+    }
+
+    private static func focusRow(_ s: Statement) -> FocusSession {
+        FocusSession(id: s.int(0),
+                     start: Date(timeIntervalSince1970: s.double(1)),
+                     end: Date(timeIntervalSince1970: s.double(2)),
+                     planned: s.double(3),
+                     note: s.text(4))
+    }
+
     // MARK: Classify attempts
 
     public func classifyAttempt(for key: ItemKey) throws -> ClassifyAttempt? {
@@ -181,6 +218,17 @@ public final class Store {
                 CREATE TABLE classify_attempts(kind TEXT NOT NULL, key TEXT NOT NULL,
                   last_try REAL NOT NULL, failures INTEGER NOT NULL, PRIMARY KEY(kind, key));
                 INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version', '1');
+                COMMIT;
+                """)
+        }
+        if version < 2 {
+            try exec("""
+                BEGIN;
+                CREATE TABLE focus_sessions(
+                  id INTEGER PRIMARY KEY, start REAL NOT NULL, end REAL NOT NULL,
+                  planned REAL NOT NULL, note TEXT);
+                CREATE INDEX focus_sessions_start ON focus_sessions(start);
+                INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version', '2');
                 COMMIT;
                 """)
         }
