@@ -20,10 +20,10 @@ private func run(_ e: inout NudgeEngine, from: TimeInterval, to: TimeInterval, _
 }
 
 struct NudgeEngineTests {
-    @Test func breakFiresOnceAtNinetyMinutes() {
+    @Test func breakFiresOnceAtNinetyMinutes() throws {
         var e = NudgeEngine()
         let fired = run(&e, from: 0, to: 7200, work, .code)
-        #expect(fired.count == 1)
+        try #require(fired.count == 1)
         #expect(fired[0].kind == .breakTime)
         #expect(fired[0].at == at(5400))
         #expect(fired[0].since == at(0))
@@ -46,25 +46,25 @@ struct NudgeEngineTests {
         #expect(rest.map(\.at) == [at(5400)])
     }
 
-    @Test func distractionSurvivesShortInterruption() {
+    @Test func distractionSurvivesShortInterruption() throws {
         var e = NudgeEngine()
         var fired = run(&e, from: 0, to: 595, yt, .distraction)
         fired += run(&e, from: 600, to: 640, work, .code)
         fired += run(&e, from: 645, to: 1300, x, .distraction)
         let d = fired.filter { $0.kind == .distraction }
-        #expect(d.count == 1)
+        try #require(d.count == 1)
         #expect(d[0].at == at(1200))
         #expect(d[0].names == ["youtube.com", "x.com"])
         #expect(d[0].since == at(0))
     }
 
-    @Test func distractionNamesAreTopByTime() {
+    @Test func distractionNamesAreTopByTime() throws {
         var e = NudgeEngine()
         var fired = run(&e, from: 0, to: 5, x, .distraction)
         fired += run(&e, from: 10, to: 15, reddit, .distraction)
         fired += run(&e, from: 20, to: 1300, yt, .distraction)
         let d = fired.filter { $0.kind == .distraction }
-        #expect(d.count == 1)
+        try #require(d.count == 1)
         #expect(d[0].at == at(1200))
         // Each gap between ticks counts for what was in front at the earlier tick:
         // x.com 10 s, reddit.com 10 s, youtube.com 1180 s. The tie goes to x.com, seen first.
@@ -77,6 +77,30 @@ struct NudgeEngineTests {
         fired += run(&e, from: 600, to: 700, work, .code)
         fired += run(&e, from: 705, to: 1800, yt, .distraction)
         #expect(fired.filter { $0.kind == .distraction }.isEmpty)
+    }
+
+    /// Missed ticks (sleep, App Nap, a stuck main thread) count as away from the last tick seen.
+    @Test func overnightGapStartsANewBreakStreak() {
+        var e = NudgeEngine()
+        #expect(run(&e, from: 0, to: 3000, work, .code).isEmpty)
+        let wake = 3000 + 8 * 3600.0
+        let after = run(&e, from: wake, to: wake + 5400, work, .code)
+        #expect(after.map(\.at) == [at(wake + 5400)])
+        #expect(after.first?.since == at(wake))
+    }
+
+    @Test func tickGapEndsTheDistractionStreakWithoutCredit() throws {
+        var e = NudgeEngine()
+        var fired = run(&e, from: 0, to: 600, yt, .distraction)
+        // Ten minutes with no ticks, then back on Distraction.
+        fired += run(&e, from: 1200, to: 1800, x, .distraction)
+        fired += run(&e, from: 1805, to: 2500, yt, .distraction)
+        let d = fired.filter { $0.kind == .distraction }
+        try #require(d.count == 1)
+        #expect(d[0].at == at(2400))
+        #expect(d[0].since == at(1200))
+        // x.com 605 s, youtube.com 595 s: the gap and the earlier streak are not credited.
+        #expect(d[0].names == ["x.com", "youtube.com"])
     }
 
     @Test func disabledNudgesNeverFire() {

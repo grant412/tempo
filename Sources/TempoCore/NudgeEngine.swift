@@ -27,6 +27,8 @@ public struct NudgeEngine: Sendable {
     public var settings: NudgeSettings
     public static let breakGap: TimeInterval = 300
     public static let distractionGrace: TimeInterval = 60
+    /// A longer gap between ticks means ticks were missed (sleep, App Nap, a stuck main thread).
+    public static let maxTickGap: TimeInterval = 30
 
     private var streakStart: Date?
     private var awayStart: Date?
@@ -40,12 +42,21 @@ public struct NudgeEngine: Sendable {
     /// The Distraction name in front at the previous tick, and when that tick was.
     /// Nil when the previous tick was not Distraction.
     private var lastDistraction: (name: String, at: Date)?
+    /// The previous tick of any kind.
+    private var lastObserved: Date?
 
     public init(settings: NudgeSettings = NudgeSettings()) {
         self.settings = settings
     }
 
     public mutating func observe(at now: Date, presence: Presence, category: CategoryID?) -> [Nudge] {
+        // Missed ticks count as away from the last tick seen, and the gap is credited to no name.
+        if let last = lastObserved, now.timeIntervalSince(last) > Self.maxTickGap {
+            if awayStart == nil { awayStart = last }
+            endDistraction()
+        }
+        lastObserved = now
+
         switch presence {
         case .away:
             if awayStart == nil { awayStart = now }
