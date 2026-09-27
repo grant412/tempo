@@ -257,20 +257,16 @@ final class TempoModel: ObservableObject {
         return Array(out.prefix(3))
     }
 
-    /// 8 AM to 6 PM, widened to the hour before the first activity (or now, on today) and the hour after the last (or now).
+    /// 8 AM to 6 PM, widened around the day's activity, its focus sessions, and now on today.
     var visibleRange: DateInterval {
         let day = calendar.dateInterval(of: .day, for: shownDay)!
-        var startHour = 8
-        var endHour = 18
-        if let first = summary.firstActivity {
-            startHour = min(startHour, max(0, calendar.component(.hour, from: first) - 1))
+        var marks = [summary.firstActivity, summary.lastActivity].compactMap { $0 }
+        for s in focusSessions {
+            let start = max(s.start, day.start), end = min(s.end, day.end)
+            if end > start { marks += [start, end] }
         }
-        if isShowingToday { startHour = min(startHour, max(0, calendar.component(.hour, from: now) - 1)) }
-        let last = isShowingToday ? max(summary.lastActivity ?? now, now) : summary.lastActivity
-        if let last { endHour = max(endHour, min(24, calendar.component(.hour, from: last) + 1)) }
-        let start = calendar.date(byAdding: .hour, value: startHour, to: day.start)!
-        let end = endHour >= 24 ? day.end : calendar.date(byAdding: .hour, value: endHour, to: day.start)!
-        return DateInterval(start: start, end: end)
+        if isShowingToday { marks.append(now) }
+        return VisibleHours.range(day: day, calendar: calendar, marks: marks)
     }
 
     // MARK: Focus sessions
