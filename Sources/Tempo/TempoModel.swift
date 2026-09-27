@@ -61,8 +61,9 @@ final class TempoModel: ObservableObject {
         monitor.start()
     }
 
-    /// A lock held by another program is retried, then reported with the file left in place.
-    /// Only a database that fails for another reason is moved aside (spec 12).
+    /// A lock held by another program is retried, then reported with the files left in place.
+    /// Only a file that is not a database or is corrupt is moved aside (spec 12); any other
+    /// failure is reported with the files left in place.
     private func openStore() {
         let dir = AppPaths.dataDirectory
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -73,7 +74,14 @@ final class TempoModel: ObservableObject {
                 return
             } catch {
                 Log.error("open store (try \(attempt) of 3): \(error)")
-                guard Self.isLockError(error) else { break }
+                if (error as? StoreError)?.isUnreadableDatabase == true { break }
+                guard Self.isLockError(error) else {
+                    Log.error("open store: files left in place, not tracking this session")
+                    showAlert("Tempo could not open its database",
+                              "Your data was left where it is, and Tempo is not tracking right now. "
+                                  + "The reason is in ~/Library/Logs/Tempo.log.")
+                    return
+                }
                 guard attempt < 3 else {
                     Log.error("open store: still locked, not tracking this session")
                     showAlert("Tempo could not open its database",
@@ -85,18 +93,31 @@ final class TempoModel: ObservableObject {
                 Thread.sleep(forTimeInterval: 1)
             }
         }
+        // The -wal and -shm files move with it under the same name: the newest writes can live
+        // only in the WAL, and a fresh open would truncate a WAL left behind.
         let broken = dir.appendingPathComponent("tempo.db.broken-\(Int(Date().timeIntervalSince1970))")
-        try? FileManager.default.moveItem(at: AppPaths.database, to: broken)
-        store = try? Store(path: AppPaths.database.path)
-        showAlert("Tempo started a fresh database",
-                  "The old one could not be opened, so it was moved to \(broken.lastPathComponent).")
+        do {
+            for suffix in ["", "-wal", "-shm"]
+            where FileManager.default.fileExists(atPath: AppPaths.database.path + suffix) {
+                try FileManager.default.moveItem(atPath: AppPaths.database.path + suffix,
+                                                 toPath: broken.path + suffix)
+            }
+            store = try Store(path: AppPaths.database.path)
+            showAlert("Tempo started a fresh database",
+                      "The old one could not be opened, so it was moved to \(broken.lastPathComponent).")
+        } catch {
+            Log.error("start fresh store: \(error), not tracking this session")
+            showAlert("Tempo could not start a fresh database",
+                      "The old one could not be opened, and a new one could not be created, so Tempo "
+                          + "is not tracking right now. The reason is in ~/Library/Logs/Tempo.log.")
+        }
     }
 
     /// SQLite reports a held lock as "database is locked" (SQLITE_BUSY) or "... is locked" (SQLITE_LOCKED).
     private static func isLockError(_ error: Error) -> Bool {
         let message: String
         switch error {
-        case StoreError.open(let text), StoreError.sql(let text): message = text
+        case StoreError.open(let text, _), StoreError.sql(let text): message = text
         default: message = String(describing: error)
         }
         let lower = message.lowercased()

@@ -4,8 +4,17 @@ import SQLite3
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 public enum StoreError: Error, Equatable {
-    case open(String)
+    /// The database could not be opened; `code` is the SQLite result code.
+    case open(String, code: Int32)
     case sql(String)
+
+    /// True when the file is not a database or is corrupt, the only failures where moving it
+    /// aside and starting fresh can help (spec 12).
+    public var isUnreadableDatabase: Bool {
+        guard case .open(_, let code) = self else { return false }
+        let primary = code & 0xFF
+        return primary == SQLITE_NOTADB || primary == SQLITE_CORRUPT
+    }
 }
 
 public final class Store {
@@ -13,16 +22,26 @@ public final class Store {
 
     public init(path: String) throws {
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX
-        if sqlite3_open_v2(path, &db, flags, nil) != SQLITE_OK {
+        let rc = sqlite3_open_v2(path, &db, flags, nil)
+        if rc != SQLITE_OK {
             let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
             sqlite3_close(db)
             db = nil
-            throw StoreError.open(message)
+            throw StoreError.open(message, code: rc)
         }
         // Wait up to 5 s for another connection's lock instead of failing at once (spec 12).
         sqlite3_busy_timeout(db, 5000)
-        try exec("PRAGMA journal_mode=WAL;")
-        try migrate()
+        do {
+            try exec("PRAGMA journal_mode=WAL;")
+            try migrate()
+        } catch StoreError.sql(let message) {
+            // SQLite reads the file at the first statement, so a file that is not a database
+            // or is corrupt fails here, not in sqlite3_open_v2.
+            let code = sqlite3_errcode(db)
+            sqlite3_close(db)
+            db = nil
+            throw StoreError.open(message, code: code)
+        }
     }
 
     deinit { sqlite3_close(db) }

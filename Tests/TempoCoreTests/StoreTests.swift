@@ -88,4 +88,46 @@ struct StoreTests {
         _ = try insert.get()
         #expect(try store.segments(overlapping: DateInterval(start: d(0), end: d(100))).count == 1)
     }
+
+    /// A segment written through the WAL survives closing and reopening an on-disk database.
+    @Test func reopensOnDiskDatabase() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("tempo-reopen-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let path = dir.appendingPathComponent("tempo.db").path
+        var store: Store? = try Store(path: path)
+        let id = try #require(store).insertSegment(Segment(id: nil, start: d(0), end: d(90), snapshot: term))
+        #expect(FileManager.default.fileExists(atPath: path + "-wal"))
+        store = nil
+        let reopened = try Store(path: path)
+        #expect(try reopened.meta("schema_version") == "1")
+        #expect(try reopened.segments(overlapping: DateInterval(start: d(0), end: d(100)))
+            == [Segment(id: id, start: d(0), end: d(90), snapshot: term)])
+    }
+
+    /// Only a file that is not a database (or is corrupt) may be moved aside (spec 12).
+    @Test func garbageFileFailsWithNotADatabase() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appendingPathComponent("tempo-garbage-\(UUID().uuidString).db").path
+        defer { for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: path + suffix) } }
+        try Data(String(repeating: "not a database ", count: 300).utf8).write(to: URL(fileURLWithPath: path))
+        let error = #expect(throws: StoreError.self) { _ = try Store(path: path) }
+        guard case .open(_, let code)? = error else {
+            Issue.record("expected StoreError.open, got \(String(describing: error))")
+            return
+        }
+        #expect(code == SQLITE_NOTADB)
+        #expect(error?.isUnreadableDatabase == true)
+    }
+
+    @Test func missingFolderIsNotShelvable() throws {
+        let path = "/tempo-missing-\(UUID().uuidString)/tempo.db"
+        let error = #expect(throws: StoreError.self) { _ = try Store(path: path) }
+        guard case .open(_, let code)? = error else {
+            Issue.record("expected StoreError.open, got \(String(describing: error))")
+            return
+        }
+        #expect(code == SQLITE_CANTOPEN)
+        #expect(error?.isUnreadableDatabase == false)
+    }
 }
