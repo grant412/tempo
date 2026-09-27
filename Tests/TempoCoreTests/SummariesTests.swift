@@ -29,4 +29,22 @@ struct SummariesTests {
         #expect((days[2].totals[.code] ?? 0) == 263 * 60)
         #expect(days[0].total == 0)
     }
+
+    /// 1:30 to 3:00 PM on the mockup Wednesday: Cloudflare docs, Stripe, YouTube, then Figma cut at 3:00.
+    @Test func sessionRecapClipsToTheSession() {
+        let session = DateInterval(start: F.at(810), end: F.at(900))
+        let r = SessionRecap.make(segments: F.wednesday, interval: session, resolver: F.resolver)
+        #expect(Int(r.total / 60) == 85)
+        #expect(r.categories.map(\.category) == [.research, .distraction, .admin, .design])
+        #expect(r.categories.map { Int($0.duration / 60) } == [30, 26, 15, 14])
+        #expect(r.topNames == ["developers.cloudflare.com", "youtube.com", "dashboard.stripe.com"])
+    }
+
+    @Test func sessionRecapWithNothingTracked() {
+        let r = SessionRecap.make(segments: F.wednesday, interval: DateInterval(start: F.at(0), end: F.at(60)),
+                                  resolver: F.resolver)
+        #expect(r.total == 0)
+        #expect(r.categories.isEmpty)
+        #expect(r.topNames.isEmpty)
+    }
 }

@@ -39,6 +39,22 @@ public struct DaySummary: Equatable, Sendable {
     }
 }
 
+/// What tracking recorded during one focus session, for the notes window (focus timer spec 3.4).
+public struct SessionRecap: Equatable, Sendable {
+    public let total: TimeInterval
+    /// Non-zero categories, longest first, same order rules as DaySummary.
+    public let categories: [CategoryTotal]
+    /// The three longest apps or sites.
+    public let topNames: [String]
+
+    public static func make(segments: [Segment], interval: DateInterval, resolver: RuleResolver) -> SessionRecap {
+        let clipped = segments.compactMap { $0.clipped(to: interval) }
+        let summary = DaySummary.make(segments: clipped, day: interval, resolver: resolver, layout: .empty)
+        let names = BlockBuilder.items(for: clipped, resolver: resolver).prefix(3).map(\.displayName)
+        return SessionRecap(total: summary.total, categories: summary.categories, topNames: Array(names))
+    }
+}
+
 public struct WeekDay: Equatable, Sendable {
     public let day: DateInterval
     public let totals: [CategoryID: TimeInterval]
