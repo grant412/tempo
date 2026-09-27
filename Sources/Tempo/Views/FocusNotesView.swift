@@ -38,11 +38,12 @@ struct FocusNotesView: View {
         loaded = true
     }
 
+    /// "18 min of 25 min" when ended early, unless both round to the same label (End now in the
+    /// last 30 s), which reads as the plain planned length.
     private func subtitle(_ s: FocusSession) -> String {
         let range = "\(Format.clock(s.start)) to \(Format.clock(s.end))"
-        return s.endedEarly
-            ? "\(range), \(Format.minutesLabel(s.duration)) of \(Format.minutesLabel(s.planned))"
-            : "\(range), \(Format.minutesLabel(s.planned))"
+        let actual = Format.minutesLabel(s.duration), planned = Format.minutesLabel(s.planned)
+        return s.endedEarly && actual != planned ? "\(range), \(actual) of \(planned)" : "\(range), \(planned)"
     }
 
     private func content(_ session: FocusSession) -> some View {
