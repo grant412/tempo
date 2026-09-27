@@ -13,14 +13,15 @@ struct DayCanvasView: View {
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) {
                         Text("Click any block to see what was inside.").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
-                        nudgeKey
+                        legend
                     }
-                    nudgeKey
+                    legend
                 }
             }
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     DayCanvas(range: model.visibleRange, layout: model.layout, nudges: model.nudgeMarks,
+                              focus: model.focusSessions,
                               now: model.isShowingToday ? model.now : nil, selectedID: model.selectedBlockID,
                               calendar: model.calendar) { model.select($0) }
                         .padding(.vertical, 10)
@@ -34,10 +35,16 @@ struct DayCanvasView: View {
         .card(EdgeInsets(top: 14, leading: 18, bottom: 12, trailing: 18))
     }
 
-    private var nudgeKey: some View {
-        HStack(spacing: 8) {
-            NudgeBadge(size: 18)
-            Text("nudge sent").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+    private var legend: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 8) {
+                FocusBadge(size: 18)
+                Text("focus timer").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+            }
+            HStack(spacing: 8) {
+                NudgeBadge(size: 18)
+                Text("nudge sent").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+            }
         }
     }
 }
@@ -48,6 +55,7 @@ struct DayCanvas: View {
     let range: DateInterval
     let layout: DayLayout
     let nudges: [NudgeRecord]
+    let focus: [FocusSession]
     let now: Date?
     let selectedID: Date?
     let calendar: Calendar
@@ -104,6 +112,19 @@ struct DayCanvas: View {
                         .zIndex(2)
                 }
 
+                ForEach(focus) { s in
+                    let top = y(max(s.start, range.start))
+                    let bottom = y(min(s.end, range.end))
+                    if bottom > top {
+                        FocusBand(height: bottom - top)
+                            .help(s.note ?? "Focus timer, \(Format.minutesLabel(s.planned)), no notes yet")
+                            .onTapGesture { WindowManager.shared.showFocusNotes(sessionID: s.id) }
+                            // Bar centered at x 59.5 (the grid line starts at 58); badge centered on its top.
+                            .offset(x: 51.5, y: top - 8)
+                            .zIndex(2)
+                    }
+                }
+
                 if let now {
                     NowMarker(time: now, width: geo.size.width).offset(y: y(now) - 9).zIndex(2)
                 }
@@ -150,6 +171,31 @@ struct NudgeBadge: View {
             .frame(width: size, height: size)
             .background(Theme.ink, in: Circle())
             .overlay(Circle().stroke(Theme.panel, lineWidth: 2))
+    }
+}
+
+/// A focus session: a 3 pt ink bar down the gutter with a clock badge on its top.
+struct FocusBand: View {
+    let height: CGFloat
+    var body: some View {
+        ZStack(alignment: .top) {
+            Rectangle().fill(Theme.ink).frame(width: 3, height: height).offset(y: 8)
+            FocusBadge(size: 16)
+        }
+        .frame(width: 16, height: height + 8, alignment: .top)
+        .contentShape(Rectangle())
+    }
+}
+
+struct FocusBadge: View {
+    var size: CGFloat = 16
+    var body: some View {
+        Image(systemName: "timer")
+            .font(.system(size: size * 0.55, weight: .bold))
+            .foregroundStyle(Theme.panel)
+            .frame(width: size, height: size)
+            .background(Theme.ink, in: Circle())
+            .overlay(Circle().stroke(Theme.panel, lineWidth: 1.5))
     }
 }
 
