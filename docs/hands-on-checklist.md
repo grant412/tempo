@@ -1,0 +1,68 @@
+# Tempo hands-on checklist
+
+Everything here needs Grant at the Mac. The build never installed, signed, or launched the app,
+so none of this has run on the real machine yet. Work top to bottom; the setup steps unlock the rest.
+
+## Setup (one time)
+
+- [ ] **Signing identity.** `scripts/setup-signing.sh`. A keychain dialog appears; click Always Allow.
+      If it fails, skip it: install falls back to ad-hoc signing, and you re-grant Accessibility after every install.
+- [ ] **Install.** `scripts/install.sh`. The first codesign may show a keychain dialog; click Always Allow.
+      If it prints "Bootstrap failed: 5", run it again or `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
+- [ ] **Accessibility.** System Settings, Privacy and Security, Accessibility: turn Tempo on.
+- [ ] **Notifications.** Allow Tempo's notifications when asked.
+- [ ] **Browsers.** Use Chrome for a minute and approve "Tempo wants to control Google Chrome". Same for Safari when you use it.
+      While that first prompt is up, note whether the menu bar item freezes.
+
+## Menu bar and windows
+
+- [ ] Menu bar shows the three-blocks glyph and today's total.
+- [ ] Popover matches the "Menu bar" artboard (canvas page Calendar). Check its edges with macOS in dark mode too.
+- [ ] Pause 30 min: menu bar reads "Paused", the row shows "Paused until ..." with Resume. Resume works.
+- [ ] Open timeline and Settings each open their window (and the popover closes).
+- [ ] Timeline matches the renders. Visual call: traffic lights sit about 12 pt above the toolbar's center.
+- [ ] Drag on blank toolbar space moves the window; double-click zooms.
+- [ ] Blocks are clickable (ring moves), hover shows tooltips.
+- [ ] It opens scrolled to now. Scroll away, close, reopen later: it re-centers on now.
+
+## Tracking accuracy
+
+- [ ] Rows look right after a few minutes of Terminal and Chrome:
+      `sqlite3 ~/Library/Application\ Support/Tempo/tempo.db "select datetime(start,'unixepoch','localtime'), round(end-start), app_name, domain, substr(title,1,40) from segments order by id desc limit 10;"`
+- [ ] Chrome incognito window for 30 s: its rows have no title and no domain.
+- [ ] Decide: Safari Private windows and other Chromium browsers' private windows are NOT detected (their sites and titles are recorded).
+- [ ] Idle: 6 minutes with no input and no video. The Away gap starts when input stopped.
+- [ ] Calls: a Zoom or Teams call over 6 minutes with no typing still counts as Meetings after it ends.
+- [ ] Lock (Ctrl+Cmd+Q) for 6+ minutes and sleep for 6+ minutes: both show as Away (gaps under 5 minutes join the blocks).
+- [ ] App Nap: Activity Monitor's App Nap column shows "No" for Tempo; 30 minutes with every Tempo window closed shows one continuous block.
+
+## Recategorizing
+
+- [ ] Click a block and change Terminal to Writing: every Terminal block recolors, including yesterday. Change it back.
+- [ ] Visit a localhost dev server for over a minute: the Needs a category panel shows it with a striped swatch. Tag it with a chip.
+- [ ] An uncategorized block's rows show readable names and "Pick one" pickers.
+
+## Nudges
+
+- [ ] Short thresholds:
+      `defaults write com.grantfeltz.tempo breakMinutes -int 1 && defaults write com.grantfeltz.tempo distractionMinutes -int 1 && launchctl kickstart -k gui/$(id -u)/com.grantfeltz.tempo`
+- [ ] Work 70 s: one "Time for a break" banner. YouTube for 70 s: one "1 minutes on Distraction" banner.
+- [ ] Bell badges appear on the timeline; clicking a banner opens today's timeline.
+- [ ] Quit Tempo, then click an old nudge in Notification Center: it launches Tempo to today's timeline.
+- [ ] Restore: `defaults delete com.grantfeltz.tempo breakMinutes; defaults delete com.grantfeltz.tempo distractionMinutes; launchctl kickstart -k gui/$(id -u)/com.grantfeltz.tempo`
+- [ ] After an overnight sleep, no break nudge fires on wake.
+
+## Claude sorting
+
+- [ ] Settings: paste an API key, Save: "In Keychain" appears.
+- [ ] Visit two sites Tempo has never seen for over a minute each. Within about two minutes `~/Library/Logs/Tempo.log` shows "classified N of M", and the Rules sheet lists them with source "Claude".
+- [ ] Save a wrong key: "Key rejected" appears and the log says the key was rejected. Save the real key: back to "In Keychain".
+
+## Settings and lifecycle
+
+- [ ] Idle minutes and nudge thresholds apply without a restart.
+- [ ] Open at login off removes `~/Library/LaunchAgents/com.grantfeltz.tempo.plist`; on writes it back.
+- [ ] Rules sheet: search filters; changing a category re-sorts; deleting a default rule stays deleted after `scripts/install.sh`.
+- [ ] Crash restart: `kill -9 $(pgrep -x Tempo)`, then within 15 s a new pid. Quit from the menu stays quit. `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo` brings it back.
+- [ ] Optional: restart the Mac; Tempo is in the menu bar after login.
+- [ ] Leave it running past midnight: the timeline rolls to the new day and yesterday is intact.
