@@ -33,7 +33,7 @@ struct MenuBarView: View {
             PauseSection()
 
             Button { WindowManager.shared.showTimeline() } label: {
-                Text("Open timeline").font(Theme.ui(14, .semibold))
+                Text("Open dashboard").font(Theme.ui(14, .semibold))
                     .frame(maxWidth: .infinity).frame(height: 40).contentShape(Rectangle())
             }
             .buttonStyle(.plain)

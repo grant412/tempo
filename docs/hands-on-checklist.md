@@ -19,7 +19,7 @@ so none of this has run on the real machine yet. Work top to bottom; the setup s
 - [ ] Menu bar shows the three-blocks glyph and today's total.
 - [ ] Popover matches the "Menu bar" artboard (canvas page Calendar). Check its edges with macOS in dark mode too.
 - [ ] Pause 30 min: menu bar reads "Paused", the row shows "Paused until ..." with Resume. Resume works.
-- [ ] Open timeline and Settings each open their window (and the popover closes).
+- [ ] Open dashboard and Settings each open their window (and the popover closes).
 - [ ] Timeline matches the renders. Visual call: traffic lights sit about 12 pt above the toolbar's center.
 - [ ] Drag on blank toolbar space moves the window; double-click zooms.
 - [ ] Blocks are clickable (ring moves), hover shows tooltips.
