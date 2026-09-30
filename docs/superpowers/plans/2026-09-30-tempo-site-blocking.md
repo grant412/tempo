@@ -439,7 +439,7 @@ struct BlockScheduleTests {
         let sundayMorning = BlockSchedule(enabled: true, weekdays: [1], startMinute: 0, endMinute: 720)
         let w = sundayMorning.window(containing: date(1, 11, month: 11), calendar: cal)
         #expect(w == DateInterval(start: date(1, 0, month: 11), end: date(1, 12, month: 11)))
-        #expect(w?.duration == 13 * 3600)
+        #expect(w?.duration == TimeInterval(13 * 3600))
     }
 
     @Test func weekdayMaskRoundTrips() {
