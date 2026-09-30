@@ -209,15 +209,16 @@ Nothing is shown for adult blocking, since it is always on.
 ### 5.2 Tempo app
 
 **`BrowserTabs`** (new, `System/BrowserTabs.swift`, `@MainActor`)
-- `struct TabRef: Hashable { bundleID; window: Int; tab: Int }`: Chrome uses window id and tab id;
-  Safari uses window id and tab index.
-- `func frontTab(bundleID:) -> (TabRef, String)?` and `func allTabs(bundleID:) -> [(TabRef, String)]`.
+- `struct TabRef: Hashable { bundleID; window: Int; tab: Int }`: window id plus 1-based tab index
+  in both browsers (the read and the write happen in the same tick).
+- `func frontTab(bundleID:) -> Tab?` and `func allTabs(bundleID:) -> [Tab]?` (nil when the read
+  failed), where `Tab` is a `TabRef` plus its URL.
   Compiled `NSAppleScript`s cached per browser, `with timeout of 1 second`. The all-tabs script
-  reads `id of every tab of w` and `URL of every tab of w` per window (two Apple Events per
-  window, not per tab), wraps each window in `try`, and joins fields with `ASCII character 9`
+  reads `id of w` and `URL of every tab of w` per window (two Apple Events per
+  window, not per tab), wraps each window in `try`, and joins fields with `character id 9`
   (the word `tab` means a tab object inside `tell application "Google Chrome"`).
 - `func setURL(_ url: String, at ref: TabRef) -> Bool`: builds a one-off script
-  (`set URL of tab id T of window id W` in Chrome, `set URL of tab T of window id W` in Safari)
+  (`set URL of tab T of window id W` in both browsers)
   with the URL escaped for AppleScript (backslash and double quote).
 - Callers check `NSRunningApplication.runningApplications(withBundleIdentifier:)` first.
 - The tracker's `BrowserTabReader` stays as it is.
