@@ -1,7 +1,9 @@
 #!/bin/zsh
 # Builds, installs to /Applications, writes the LaunchAgent, and starts Tempo under launchd.
+# Makes the "Tempo Dev" signing identity first if this Mac does not have it yet.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+scripts/setup-signing.sh
 scripts/build-app.sh
 GUI="gui/$(id -u)"
 launchctl bootout "$GUI/com.grantfeltz.tempo" 2>/dev/null || true

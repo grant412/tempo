@@ -18,12 +18,12 @@ Needs a Mac with Apple silicon (M1 or later) on macOS 15 or later. No Xcode.
 1. Install Apple's command line tools if they are not there yet: `xcode-select --install`.
 2. Get the code: `git clone https://github.com/grant412/tempo.git ~/Desktop/tempo`, then
    `cd ~/Desktop/tempo`.
-3. `scripts/setup-signing.sh` once. It makes a local "Tempo Dev" signing identity, so macOS keeps
-   Tempo's permissions when you update. Click Always Allow on the keychain dialog.
-4. `scripts/install.sh`. It builds, installs to /Applications, and starts Tempo at login.
-5. Grant the permissions below: Accessibility, then Allow when macOS asks to let Tempo control
+3. `scripts/install.sh`. The first run makes a local "Tempo Dev" signing identity (so macOS
+   keeps Tempo's permissions when you update; click Always Allow on the keychain dialog), then
+   it builds, installs to /Applications, and starts Tempo at login.
+4. Grant the permissions below: Accessibility, then Allow when macOS asks to let Tempo control
    Chrome and Safari, then notifications.
-6. Optional: paste your own Claude API key in Settings, Sorting, so new apps and sites get a
+5. Optional: paste your own Claude API key in Settings, Sorting, so new apps and sites get a
    category. Without it they stay Uncategorized until you sort them.
 
 To update later: `git pull` then `scripts/install.sh`.
@@ -34,8 +34,7 @@ launch and have no switch (see Blocking below).
 ## Build and install
 
     swift test                 # logic tests (Swift Testing)
-    scripts/setup-signing.sh   # once: creates the "Tempo Dev" signing identity
-    scripts/install.sh         # build, sign, install to /Applications, start at login
+    scripts/install.sh         # signing identity if missing, build, sign, install, start at login
 
 The fonts (OFL) are already committed in `Resources/Fonts`. Run `scripts/fetch-fonts.sh` only
 if that folder is missing.
