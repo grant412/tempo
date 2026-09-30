@@ -85,15 +85,23 @@ final class BlockEnforcer: ObservableObject {
         case .allow:
             return
         case .blockAdult:
-            if tabs.setURL(blockedPage(["kind": "adult"]), at: tab.ref) { Log.info("blocked an adult site") }
+            if tabs.setURL(blockedPage(["kind": "adult"]), at: tab.ref) {
+                Log.info("blocked an adult site")
+            } else {
+                logFailure(tab.ref.bundleID, now: now)
+            }
         case .blockDistraction(let site, let until):
             let page = blockedPage(["kind": "distraction", "site": site, "until": Format.clock(until)])
-            if tabs.setURL(page, at: tab.ref) { Log.info("blocked \(site)") }
+            if tabs.setURL(page, at: tab.ref) {
+                Log.info("blocked \(site)")
+            } else {
+                logFailure(tab.ref.bundleID, now: now)
+            }
         case .rewrite(let url):
             // An engine that strips the parameter would reload forever; retry at most every 5 s.
             if let last = lastRewrite[tab.ref], last.from == tab.url { return }
             lastRewrite[tab.ref] = (tab.url, now)
-            tabs.setURL(url, at: tab.ref)
+            if !tabs.setURL(url, at: tab.ref) { logFailure(tab.ref.bundleID, now: now) }
         }
     }
 
@@ -105,9 +113,10 @@ final class BlockEnforcer: ObservableObject {
         return parts.string ?? "about:blank"
     }
 
+    /// A failed tab read or write, logged at most once a minute per browser.
     private func logFailure(_ bundleID: String, now: Date) {
         if let last = lastFailureLog[bundleID], now.timeIntervalSince(last) < 60 { return }
         lastFailureLog[bundleID] = now
-        Log.error("blocking: could not read tabs in \(bundleID)")
+        Log.error("blocking: could not read or set tabs in \(bundleID)")
     }
 }

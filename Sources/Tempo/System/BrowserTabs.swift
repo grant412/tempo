@@ -9,7 +9,9 @@ import AppKit
 final class BrowserTabs {
     struct TabRef: Hashable {
         let bundleID: String
-        /// The browser's window id.
+        /// 1-based index of the window in the browser's `windows` list (window 1 is the front
+        /// window). An index, not the window id: Chrome's ids are text and often too big for an
+        /// AppleScript integer.
         let window: Int
         /// 1-based tab index in that window. Read and write happen in the same tick.
         let tab: Int
@@ -24,7 +26,7 @@ final class BrowserTabs {
     static let safari = "com.apple.Safari"
     static let supported: Set<String> = [chrome, safari]
 
-    /// Each script returns one line per tab: window id, tab index, URL, joined by a tab
+    /// Each script returns one line per tab: window index, tab index, URL, joined by a tab
     /// character. `sep` is set outside the `tell` because `tab` names a tab object inside it.
     private static let frontSources: [String: String] = [
         chrome: """
@@ -33,8 +35,8 @@ final class BrowserTabs {
         with timeout of 1 second
           tell application id "com.google.Chrome"
             if (count of windows) is 0 then return ""
-            set w to front window
-            return ((id of w) as text) & sep & ((active tab index of w) as text) & sep & (URL of active tab of w)
+            set w to window 1
+            return "1" & sep & ((active tab index of w) as text) & sep & (URL of active tab of w)
           end tell
         end timeout
         """,
@@ -44,11 +46,11 @@ final class BrowserTabs {
         with timeout of 1 second
           tell application id "com.apple.Safari"
             if (count of windows) is 0 then return ""
-            set w to front window
+            set w to window 1
             set t to current tab of w
             set u to URL of t
             if u is missing value then return ""
-            return ((id of w) as text) & sep & ((index of t) as text) & sep & u
+            return "1" & sep & ((index of t) as text) & sep & u
           end tell
         end timeout
         """,
@@ -62,12 +64,12 @@ final class BrowserTabs {
         set out to ""
         with timeout of 1 second
           tell application id "com.google.Chrome"
-            repeat with w in windows
+            repeat with wi from 1 to count of windows
               try
-                set wid to id of w
+                set w to window wi
                 set urls to URL of every tab of w
                 repeat with i from 1 to count of urls
-                  set out to out & (wid as text) & sep & (i as text) & sep & (item i of urls) & linefeed
+                  set out to out & (wi as text) & sep & (i as text) & sep & (item i of urls) & linefeed
                 end repeat
               end try
             end repeat
@@ -81,14 +83,14 @@ final class BrowserTabs {
         set out to ""
         with timeout of 1 second
           tell application id "com.apple.Safari"
-            repeat with w in windows
+            repeat with wi from 1 to count of windows
               try
-                set wid to id of w
+                set w to window wi
                 set urls to URL of every tab of w
                 repeat with i from 1 to count of urls
                   set u to item i of urls
                   if u is not missing value then
-                    set out to out & (wid as text) & sep & (i as text) & sep & u & linefeed
+                    set out to out & (wi as text) & sep & (i as text) & sep & u & linefeed
                   end if
                 end repeat
               end try
@@ -123,7 +125,7 @@ final class BrowserTabs {
         with timeout of 1 second
           if application id "\(ref.bundleID)" is running then
             tell application id "\(ref.bundleID)"
-              set URL of tab \(ref.tab) of window id \(ref.window) to \(quoted)
+              set URL of tab \(ref.tab) of window \(ref.window) to \(quoted)
             end tell
           end if
         end timeout
