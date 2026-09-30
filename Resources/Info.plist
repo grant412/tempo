@@ -14,6 +14,6 @@
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
   <key>ATSApplicationFontsPath</key><string>Fonts</string>
-  <key>NSAppleEventsUsageDescription</key><string>Tempo reads the address and title of the current browser tab so it can sort your browsing time.</string>
+  <key>NSAppleEventsUsageDescription</key><string>Tempo reads your browser tabs to sort your time, and swaps in a blocked page for blocked sites.</string>
 </dict>
 </plist>
