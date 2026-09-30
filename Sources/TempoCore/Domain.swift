@@ -1,7 +1,7 @@
 import Foundation
 
 public enum Domain {
-    /// Lowercased host without a leading "www.". Keeps the port only for local hosts.
+    /// Lowercased host without a leading "www." or a trailing ".". Keeps the port only for local hosts.
     /// Returns nil for anything that is not http or https.
     public static func normalize(_ urlString: String) -> String? {
         guard let url = URL(string: urlString),
@@ -9,6 +9,7 @@ public enum Domain {
               var host = url.host?.lowercased(), !host.isEmpty
         else { return nil }
         if host.hasPrefix("www.") { host.removeFirst(4) }
+        if host.hasSuffix(".") { host.removeLast() }
         if isLocal(host), let port = url.port { return "\(host):\(port)" }
         return host
     }

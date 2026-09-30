@@ -51,6 +51,11 @@ struct AdultSitesTests {
         #expect(!sites.contains(host: "github.com"))
     }
 
+    @Test func trailingDotHostsMatchThroughNormalize() {
+        #expect(sites.contains(host: Domain.normalize("https://example-adult.com./")!))
+        #expect(sites.contains(host: Domain.normalize("https://cdn.example-adult.com./")!))
+    }
+
     @Test func localHostsAndAddressesNeverMatch() {
         #expect(!sites.contains(host: "porn.test:3000"))
         #expect(!sites.contains(host: "localhost:5173"))

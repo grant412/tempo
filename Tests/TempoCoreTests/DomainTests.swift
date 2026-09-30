@@ -7,6 +7,11 @@ struct DomainTests {
         #expect(Domain.normalize("http://github.com/a/b") == "github.com")
     }
 
+    @Test func stripsATrailingDot() {
+        #expect(Domain.normalize("https://xvideos.com./") == "xvideos.com")
+        #expect(Domain.normalize("https://www.Example.com./a") == "example.com")
+    }
+
     @Test func keepsPortOnlyForLocalHosts() {
         #expect(Domain.normalize("http://localhost:5173/") == "localhost:5173")
         #expect(Domain.normalize("http://127.0.0.1:8080/x") == "127.0.0.1:8080")
