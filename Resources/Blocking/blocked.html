@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blocked</title>
+<style>
+  :root { --bg: #f6f3ec; --panel: #ffffff; --line: #e7e1d5; --ink: #1d1b18; --muted: #6b655b; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 36px 40px; max-width: 540px; width: 100%;
+  }
+  .eyebrow {
+    font: 600 11px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 14px;
+  }
+  h1 { font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; margin: 0; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main class="card">
+  <p class="eyebrow" id="eyebrow">Tempo</p>
+  <h1 id="headline">This site is blocked.</h1>
+</main>
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get("kind") === "distraction") {
+    const site = q.get("site") || "This site";
+    const until = q.get("until");
+    document.getElementById("eyebrow").textContent = "Distraction block";
+    document.getElementById("headline").textContent =
+      until ? site + " is blocked until " + until + "." : site + " is blocked.";
+  }
+</script>
+</body>
+</html>
