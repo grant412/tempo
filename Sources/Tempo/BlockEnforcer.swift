@@ -92,7 +92,8 @@ final class BlockEnforcer: ObservableObject {
                 logFailure(tab.ref.bundleID, now: now)
             }
         case .blockDistraction(let site, let until):
-            let end = Format.lockEnd(until, now: now, calendar: calendar)
+            // Always the day name: the page stays open, and "tomorrow" would go stale.
+            let end = Format.dayAndClock(until, calendar: calendar)
             let page = blockedPage(["kind": "distraction", "site": site, "until": end])
             // The sweep reads incognito and private tabs too, so the log never names the site.
             if tabs.setURL(page, at: tab.ref) {

@@ -28,11 +28,18 @@ public enum Format {
            calendar.isDate(end, inSameDayAs: tomorrow) {
             return "tomorrow at " + time
         }
+        return dayAndClock(end, calendar: calendar)
+    }
+
+    /// "Wednesday at 5:00 PM", with no "today" or "tomorrow", for text that stays on screen and
+    /// would go stale (the blocked page). `.distantFuture` reads "further notice".
+    public static func dayAndClock(_ date: Date, calendar: Calendar) -> String {
+        if date >= .distantFuture { return "further notice" }
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.timeZone = calendar.timeZone
         f.dateFormat = "EEEE"
-        return f.string(from: end) + " at " + time
+        return f.string(from: date) + " at " + clock(date, timeZone: calendar.timeZone)
     }
 
     /// "12 AM", "8 AM", "12 PM", "6 PM".

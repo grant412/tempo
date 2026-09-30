@@ -42,7 +42,8 @@ and run `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
 - SafeSearch is always forced on Google, Bing, and DuckDuckGo.
 - Distraction sites are blocked during one weekly window set in Settings, Blocking. While it runs,
   the schedule is locked and no site can be moved out of Distraction. Schedule changes apply when
-  you press Save, and a change that starts the block right away asks first.
+  you press Save, and a change that starts the block right away asks first. The same start and
+  end time runs 24 hours, so back-to-back days join into one block; Save names its real end first.
 - Tempo checks the front tab every second and every tab every 5 seconds, and swaps a blocked tab
   for its own blocked page. Blocking keeps running when tracking is paused or stopped. Quitting
   Tempo turns it off.

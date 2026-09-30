@@ -75,8 +75,10 @@ Going Back from the blocked page loads the site again, and it is replaced again 
 A local HTML page shipped in the app at `Tempo.app/Contents/Resources/Blocking/blocked.html`,
 opened as a `file://` URL with a query string:
 
-- Distraction: `?kind=distraction&site=youtube.com&until=5:00%20PM`. Shows
-  "youtube.com is blocked until 5:00 PM." with a small "Distraction block" eyebrow.
+- Distraction: `?kind=distraction&site=youtube.com&until=Wednesday%20at%205:00%20PM`. Shows
+  "youtube.com is blocked until Wednesday at 5:00 PM." with a small "Distraction block" eyebrow.
+  The end always names the day (never "today" or "tomorrow"), because the page can stay open
+  past midnight.
 - Adult: `?kind=adult`. Shows "This site is blocked." and never names the site.
 
 The page reads its query with a few lines of script and fills in the text (the text is inserted
@@ -146,7 +148,10 @@ Blocking
 - An end time at or before the start time runs past midnight (9:00 PM to 1:00 AM). The detail
   line then adds "Ends the next day." Equal times mean a full 24 hours. Windows that touch (end
   of one is the start of the next) join into one lock, and a schedule that would never unlock
-  cannot be saved.
+  cannot be saved. With equal times the detail line says so ("The same start and end time runs
+  a full 24 hours, so back-to-back days join into one block."), and when the next lock joins
+  more than one day, Save first asks "Your hours join into one block" with its real start and
+  end, even if that lock starts later.
 - The adult row chip shows the loaded entry count. If the list failed to load, it shows a red
   "List missing" chip instead.
 - Defaults: switch off, Mon to Fri, 9:00 AM to 5:00 PM.

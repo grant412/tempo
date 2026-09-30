@@ -18,6 +18,8 @@ struct SettingsView: View {
     @State private var confirmEnd: Date?
     /// True while the "This schedule never ends" alert is up.
     @State private var neverEnds = false
+    /// A lock that joins more than one day, waiting for Grant to confirm before Save applies it.
+    @State private var confirmJoined: DateInterval?
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var apiKey = ""
     @State private var keySaved = Keychain.read() != nil
@@ -158,12 +160,19 @@ struct SettingsView: View {
             savedSchedule = AppSettings.blockSchedule
             draft = savedSchedule
             confirmEnd = nil
+            confirmJoined = nil
         }
         .alert("Start the Distraction block now?", isPresented: confirmingStart, presenting: confirmEnd) { end in
             Button("Start block") { startBlock(shown: end) }
             Button("Cancel", role: .cancel) {}
         } message: { end in
             Text("Distraction sites will be blocked right away and stay locked until \(Self.lockEnd(end)).")
+        }
+        .alert("Your hours join into one block", isPresented: confirmingJoined, presenting: confirmJoined) { _ in
+            Button("Save") { saveJoined() }
+            Button("Cancel", role: .cancel) {}
+        } message: { lock in
+            Text("Back-to-back days with the same start and end time run together. Distraction sites will be blocked from \(Self.lockEnd(lock.start)) until \(Self.lockEnd(lock.end)) with no break.")
         }
         .alert("This schedule never ends", isPresented: $neverEnds) {
             Button("OK", role: .cancel) {}
@@ -198,11 +207,18 @@ struct SettingsView: View {
 
     private var blockDetail: String {
         let base = "Blocks every site in Distraction during these hours. Locked while it runs."
+        if draft.startMinute == draft.endMinute {
+            return base + " The same start and end time runs a full 24 hours, so back-to-back days join into one block."
+        }
         return draft.runsPastMidnight ? base + " Ends the next day." : base
     }
 
     private var confirmingStart: Binding<Bool> {
         Binding(get: { confirmEnd != nil }, set: { if !$0 { confirmEnd = nil } })
+    }
+
+    private var confirmingJoined: Binding<Bool> {
+        Binding(get: { confirmJoined != nil }, set: { if !$0 { confirmJoined = nil } })
     }
 
     private static func lockEnd(_ end: Date) -> String {
@@ -217,9 +233,19 @@ struct SettingsView: View {
             neverEnds = true
         } else if let lock = draft.lock(containing: Date(), calendar: calendar) {
             confirmEnd = lock.end
+        } else if let next = draft.upcomingLock(from: Date(), calendar: calendar),
+                  draft.isJoined(next, calendar: calendar) {
+            confirmJoined = next
         } else {
             applyDraft()
         }
+    }
+
+    /// "Save" in the joined-days alert. If the block started while the alert was open, nothing
+    /// is applied: the draft stays staged and Save asks again, now with the start-now alert.
+    private func saveJoined() {
+        guard draft.lock(containing: Date(), calendar: .autoupdatingCurrent) == nil else { return }
+        applyDraft()
     }
 
     /// "Start block" in the confirmation. The lock is worked out again first, so an alert left

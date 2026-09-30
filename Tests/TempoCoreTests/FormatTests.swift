@@ -39,6 +39,16 @@ struct FormatTests {
         #expect(Format.lockEnd(.distantFuture, now: now, calendar: cal) == "further notice")
     }
 
+    /// For text that stays on screen, like the blocked page: never "tomorrow", always the day.
+    @Test func dayAndClockAlwaysNamesTheDay() {
+        let cal = Fixtures.calendar
+        let wednesday5pm = cal.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 17))!
+        let thursday1am = cal.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 1))!
+        #expect(Format.dayAndClock(wednesday5pm, calendar: cal) == "Wednesday at 5:00 PM")
+        #expect(Format.dayAndClock(thursday1am, calendar: cal) == "Thursday at 1:00 AM")
+        #expect(Format.dayAndClock(.distantFuture, calendar: cal) == "further notice")
+    }
+
     @Test func lockEndUsesTheCalendarsTimeZone() {
         var la = Calendar(identifier: .gregorian)
         la.timeZone = TimeZone(identifier: "America/Los_Angeles")!

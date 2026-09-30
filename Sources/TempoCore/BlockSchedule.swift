@@ -60,6 +60,28 @@ public struct BlockSchedule: Equatable, Sendable {
         return lock
     }
 
+    /// The lock running at `date`, or else the next one to start within a week. Save uses it to
+    /// warn before hours that join neighboring days into one long block.
+    public func upcomingLock(from date: Date, calendar: Calendar) -> DateInterval? {
+        if let running = lock(containing: date, calendar: calendar) { return running }
+        guard enabled else { return nil }
+        let today = calendar.startOfDay(for: date)
+        for offset in 0...7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today),
+                  weekdays.contains(calendar.component(.weekday, from: day)),
+                  let start = window(startingOn: day, calendar: calendar)?.start,
+                  start > date else { continue }
+            return lock(containing: start, calendar: calendar)
+        }
+        return nil
+    }
+
+    /// True when `lock` is more than one window joined end to start. Compares against the
+    /// first window rather than 24 hours, so a full day on a DST day is not mistaken for a join.
+    public func isJoined(_ lock: DateInterval, calendar: Calendar) -> Bool {
+        window(containing: lock.start, calendar: calendar)?.end != lock.end
+    }
+
     /// True when the schedule is on and some lock never ends. Every window starts on a selected
     /// day, so checking the lock from each window start in one week is enough.
     public func neverUnlocks(calendar: Calendar) -> Bool {

@@ -91,4 +91,32 @@ struct BlockScheduleTests {
         #expect(BlockSchedule.weekdays(mask: 0) == [])
         #expect(BlockSchedule.mask(weekdays: [1, 7, 9]) == 0b1000001)
     }
+
+    /// 2026-09-21 and 09-28 are Mondays.
+    @Test func upcomingLockIsTheRunningOneOrTheNextToStart() {
+        #expect(workdays.upcomingLock(from: date(23, 10), calendar: cal) == DateInterval(start: date(23, 9), end: date(23, 17)))
+        #expect(workdays.upcomingLock(from: date(23, 8), calendar: cal) == DateInterval(start: date(23, 9), end: date(23, 17)))
+        #expect(workdays.upcomingLock(from: date(23, 18), calendar: cal) == DateInterval(start: date(24, 9), end: date(24, 17)))
+        #expect(workdays.upcomingLock(from: date(26, 10), calendar: cal) == DateInterval(start: date(28, 9), end: date(28, 17)))
+        var off = workdays
+        off.enabled = false
+        #expect(off.upcomingLock(from: date(23, 10), calendar: cal) == nil)
+    }
+
+    @Test func joinedLocksAreDetected() {
+        let chained = BlockSchedule(enabled: true, weekdays: [2, 3, 4, 5, 6], startMinute: 540, endMinute: 540)
+        let next = chained.upcomingLock(from: date(21, 8), calendar: cal)!
+        #expect(next == DateInterval(start: date(21, 9), end: date(26, 9)))
+        #expect(chained.isJoined(next, calendar: cal))
+        #expect(!workdays.isJoined(workdays.upcomingLock(from: date(23, 8), calendar: cal)!, calendar: cal))
+        let saturday = BlockSchedule(enabled: true, weekdays: [7], startMinute: 0, endMinute: 0)
+        #expect(!saturday.isJoined(saturday.upcomingLock(from: date(23, 8), calendar: cal)!, calendar: cal))
+    }
+
+    @Test func aFullDayOnTheFallBackSundayIsNotJoined() {
+        let sunday = BlockSchedule(enabled: true, weekdays: [1], startMinute: 0, endMinute: 0)
+        let lock = sunday.upcomingLock(from: date(31, 12, month: 10), calendar: cal)!
+        #expect(lock.duration == TimeInterval(25 * 3600))
+        #expect(!sunday.isJoined(lock, calendar: cal))
+    }
 }
