@@ -45,6 +45,36 @@ public struct BlockSchedule: Equatable, Sendable {
         return nil
     }
 
+    /// The lock running at `date`: the window containing it, joined with each window that starts
+    /// exactly where the last one ends (equal times on neighboring days). After 8 joins it is a
+    /// lock that never ends, with `.distantFuture` as its end.
+    public func lock(containing date: Date, calendar: Calendar) -> DateInterval? {
+        guard var lock = window(containing: date, calendar: calendar) else { return nil }
+        for _ in 0..<8 {
+            guard let next = window(containing: lock.end, calendar: calendar) else { return lock }
+            lock = DateInterval(start: lock.start, end: next.end)
+        }
+        guard window(containing: lock.end, calendar: calendar) == nil else {
+            return DateInterval(start: lock.start, end: .distantFuture)
+        }
+        return lock
+    }
+
+    /// True when the schedule is on and some lock never ends. Every window starts on a selected
+    /// day, so checking the lock from each window start in one week is enough.
+    public func neverUnlocks(calendar: Calendar) -> Bool {
+        guard enabled else { return false }
+        let today = calendar.startOfDay(for: Date())
+        for offset in 0..<7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today),
+                  weekdays.contains(calendar.component(.weekday, from: day)),
+                  let start = window(startingOn: day, calendar: calendar)?.start,
+                  lock(containing: start, calendar: calendar)?.end == .distantFuture else { continue }
+            return true
+        }
+        return false
+    }
+
     private func window(startingOn day: Date, calendar: Calendar) -> DateInterval? {
         let endDay: Date? = runsPastMidnight ? calendar.date(byAdding: .day, value: 1, to: day) : day
         guard let endDay,

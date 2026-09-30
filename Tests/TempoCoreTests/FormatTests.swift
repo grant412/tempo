@@ -25,6 +25,28 @@ struct FormatTests {
         #expect(Format.clock(m, timeZone: tz) == "8:12 AM")
     }
 
+    /// Fixtures.calendar is America/New_York; 2026-09-23 is a Wednesday.
+    @Test func lockEndNamesTheDayWhenNotToday() {
+        let cal = Fixtures.calendar
+        func at(_ day: Int, _ hour: Int) -> Date {
+            cal.date(from: DateComponents(year: 2026, month: 9, day: day, hour: hour))!
+        }
+        let now = at(23, 10)
+        #expect(Format.lockEnd(at(23, 17), now: now, calendar: cal) == "5:00 PM")
+        #expect(Format.lockEnd(at(24, 1), now: now, calendar: cal) == "tomorrow at 1:00 AM")
+        #expect(Format.lockEnd(at(25, 9), now: now, calendar: cal) == "Friday at 9:00 AM")
+        #expect(Format.lockEnd(at(26, 9), now: now, calendar: cal) == "Saturday at 9:00 AM")
+        #expect(Format.lockEnd(.distantFuture, now: now, calendar: cal) == "further notice")
+    }
+
+    @Test func lockEndUsesTheCalendarsTimeZone() {
+        var la = Calendar(identifier: .gregorian)
+        la.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        let now = Fixtures.calendar.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 10))!
+        let end = Fixtures.calendar.date(from: DateComponents(year: 2026, month: 9, day: 24, hour: 1))!
+        #expect(Format.lockEnd(end, now: now, calendar: la) == "10:00 PM")
+    }
+
     @Test func hourLabels() {
         #expect(Format.hourLabel(0) == "12 AM")
         #expect(Format.hourLabel(8) == "8 AM")

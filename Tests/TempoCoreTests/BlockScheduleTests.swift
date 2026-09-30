@@ -56,6 +56,35 @@ struct BlockScheduleTests {
         #expect(w?.duration == TimeInterval(13 * 3600))
     }
 
+    @Test func lockOfANormalWindowIsTheWindow() {
+        #expect(workdays.lock(containing: date(23, 10), calendar: cal) == workdays.window(containing: date(23, 10), calendar: cal))
+        #expect(workdays.lock(containing: date(23, 10), calendar: cal) == DateInterval(start: date(23, 9), end: date(23, 17)))
+        #expect(workdays.lock(containing: date(23, 18), calendar: cal) == nil)
+    }
+
+    /// 2026-09-21 is a Monday.
+    @Test func touchingWindowsChainIntoOneLock() {
+        let nineToNine = BlockSchedule(enabled: true, weekdays: [2, 3, 4, 5, 6], startMinute: 540, endMinute: 540)
+        #expect(nineToNine.lock(containing: date(21, 10), calendar: cal) == DateInterval(start: date(21, 9), end: date(26, 9)))
+        #expect(nineToNine.neverUnlocks(calendar: cal) == false)
+    }
+
+    @Test func everyDayAllDayNeverUnlocks() {
+        let always = BlockSchedule(enabled: true, weekdays: [1, 2, 3, 4, 5, 6, 7], startMinute: 0, endMinute: 0)
+        let lock = always.lock(containing: date(23, 10), calendar: cal)
+        #expect(lock?.start == date(23, 0))
+        #expect(lock?.end == .distantFuture)
+        #expect(always.neverUnlocks(calendar: cal))
+        var off = always
+        off.enabled = false
+        #expect(off.lock(containing: date(23, 10), calendar: cal) == nil)
+        #expect(off.neverUnlocks(calendar: cal) == false)
+    }
+
+    @Test func aWorkdayScheduleUnlocks() {
+        #expect(workdays.neverUnlocks(calendar: cal) == false)
+    }
+
     @Test func weekdayMaskRoundTrips() {
         #expect(BlockSchedule.weekdays(mask: BlockSchedule.workweekMask) == [2, 3, 4, 5, 6])
         #expect(BlockSchedule.mask(weekdays: [2, 3, 4, 5, 6]) == 62)

@@ -18,6 +18,23 @@ public enum Format {
         return f.string(from: date)
     }
 
+    /// When a lock ends, read from `now`: "5:00 PM" today, "tomorrow at 1:00 AM",
+    /// "Friday at 9:00 AM" later on, "further notice" for a lock that never ends.
+    public static func lockEnd(_ end: Date, now: Date, calendar: Calendar) -> String {
+        if end >= .distantFuture { return "further notice" }
+        let time = clock(end, timeZone: calendar.timeZone)
+        if calendar.isDate(end, inSameDayAs: now) { return time }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)),
+           calendar.isDate(end, inSameDayAs: tomorrow) {
+            return "tomorrow at " + time
+        }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = calendar.timeZone
+        f.dateFormat = "EEEE"
+        return f.string(from: end) + " at " + time
+    }
+
     /// "12 AM", "8 AM", "12 PM", "6 PM".
     public static func hourLabel(_ hour: Int) -> String {
         let h = ((hour % 24) + 24) % 24
