@@ -9,6 +9,11 @@ struct SettingsView: View {
     @AppStorage(AppSettings.Keys.breakMinutes) private var breakMinutes = 90
     @AppStorage(AppSettings.Keys.distractionEnabled) private var distractionEnabled = true
     @AppStorage(AppSettings.Keys.distractionMinutes) private var distractionMinutes = 20
+    @AppStorage(AppSettings.Keys.blockEnabled) private var blockEnabled = false
+    @AppStorage(AppSettings.Keys.blockWeekdayMask) private var blockWeekdayMask = BlockSchedule.workweekMask
+    @AppStorage(AppSettings.Keys.blockStartMinute) private var blockStartMinute = 540
+    @AppStorage(AppSettings.Keys.blockEndMinute) private var blockEndMinute = 1020
+    @ObservedObject private var blocker = BlockEnforcer.shared
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var apiKey = ""
     @State private var keySaved = Keychain.read() != nil
@@ -20,6 +25,9 @@ struct SettingsView: View {
 
     private static let red = Color(hex: "#c0382f")
     private static let redSoft = Color(hex: "#fae8e6")
+
+    /// Monday first, as Calendar weekday numbers.
+    private static let weekdayOrder = [2, 3, 4, 5, 6, 7, 1]
 
     var body: some View {
         ScrollView {
@@ -52,6 +60,18 @@ struct SettingsView: View {
                             Toggle("Distraction nudge", isOn: $distractionEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
                         }
                     }
+                }
+
+                section("Blocking") {
+                    row("Adult sites", "Always blocked in Chrome and Safari, including private windows. SafeSearch is always on for Google, Bing, and DuckDuckGo.") {
+                        if blocker.adultListLoaded {
+                            StatusChip(text: "\(blocker.adult.count.formatted()) sites")
+                        } else {
+                            StatusChip(text: "List missing", foreground: Self.red, background: Self.redSoft)
+                        }
+                    }
+                    divider
+                    distractionBlockRow
                 }
 
                 section("Sorting") {
@@ -101,11 +121,11 @@ struct SettingsView: View {
                         Permissions.openPrivacyPane("Privacy_Accessibility")
                     }
                     divider
-                    permissionRow("Chrome", "Reads the address and title of the current tab.", chrome) {
+                    permissionRow("Chrome", "Reads the current tab, and swaps in the blocked page for blocked sites.", chrome) {
                         Permissions.openPrivacyPane("Privacy_Automation")
                     }
                     divider
-                    permissionRow("Safari", "Asks the first time you use Safari with Tempo running.", safari) {
+                    permissionRow("Safari", "Same as Chrome. Asks the first time Safari runs with Tempo running.", safari) {
                         Permissions.openPrivacyPane("Privacy_Automation")
                     }
                     divider
@@ -128,6 +148,10 @@ struct SettingsView: View {
         .onChange(of: breakMinutes) { _, _ in model.applySettings() }
         .onChange(of: distractionEnabled) { _, _ in model.applySettings() }
         .onChange(of: distractionMinutes) { _, _ in model.applySettings() }
+        .onChange(of: blockEnabled) { _, _ in BlockEnforcer.shared.refreshWindow() }
+        .onChange(of: blockWeekdayMask) { _, _ in BlockEnforcer.shared.refreshWindow() }
+        .onChange(of: blockStartMinute) { _, _ in BlockEnforcer.shared.refreshWindow() }
+        .onChange(of: blockEndMinute) { _, _ in BlockEnforcer.shared.refreshWindow() }
         .task { await loadPermissions() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
             Task { await loadPermissions() }
@@ -153,6 +177,62 @@ struct SettingsView: View {
     }
 
     private var divider: some View { Rectangle().fill(Theme.grid).frame(height: 1) }
+
+    private var blockDetail: String {
+        let base = "Blocks every site in Distraction during these hours. Locked while it runs."
+        return blockEndMinute <= blockStartMinute ? base + " Ends the next day." : base
+    }
+
+    private var distractionBlockRow: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Distraction block").font(Theme.ui(14, .semibold))
+                    Text(blockDetail).font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 400, alignment: .leading)
+                Spacer(minLength: 12)
+                if let w = blocker.distractionWindow {
+                    StatusChip(text: "Locked until \(Format.clock(w.end))", foreground: Theme.ink, background: Theme.chip)
+                }
+                Toggle("Distraction block", isOn: $blockEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                    .disabled(blocker.isLocked)
+            }
+            HStack(spacing: 6) {
+                ForEach(Self.weekdayOrder, id: \.self) { day in
+                    DayChip(label: Calendar.current.shortWeekdaySymbols[day - 1],
+                            on: blockWeekdayMask & (1 << (day - 1)) != 0) {
+                        blockWeekdayMask ^= (1 << (day - 1))
+                    }
+                }
+                Spacer(minLength: 16)
+                Text("From").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                DatePicker("Start", selection: minuteBinding($blockStartMinute), displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                Text("To").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                DatePicker("End", selection: minuteBinding($blockEndMinute), displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+            }
+            .disabled(blocker.isLocked)
+            .opacity(blocker.isLocked ? 0.5 : 1)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+    }
+
+    /// A minutes-after-midnight setting as today's date at that time, for DatePicker.
+    private func minuteBinding(_ minutes: Binding<Int>) -> Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(bySettingHour: minutes.wrappedValue / 60, minute: minutes.wrappedValue % 60,
+                                      second: 0, of: Date()) ?? Date()
+            },
+            set: { date in
+                let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                minutes.wrappedValue = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+            })
+    }
 
     private func section<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {

@@ -202,3 +202,23 @@ struct LockedBadge: View {
         .accessibilityLabel(text)
     }
 }
+
+/// A weekday toggle in the Distraction block schedule: ink when on, chip color when off.
+struct DayChip: View {
+    let label: String
+    let on: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label).font(Theme.ui(12.5, .semibold))
+                .frame(width: 42, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(on ? Color.white : Theme.ink)
+        .background(on ? Theme.ink : Theme.chip, in: RoundedRectangle(cornerRadius: 7))
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}

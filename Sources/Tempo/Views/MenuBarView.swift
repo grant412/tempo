@@ -4,6 +4,7 @@ import TempoCore
 
 struct MenuBarView: View {
     @EnvironmentObject var model: TempoModel
+    @ObservedObject private var blocker = BlockEnforcer.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -29,6 +30,13 @@ struct MenuBarView: View {
             }
 
             FocusTimerSection()
+
+            if let w = blocker.distractionWindow {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.fill").font(.system(size: 12, weight: .semibold))
+                    Text("Blocking Distraction until \(Format.clock(w.end))").font(Theme.ui(13.5, .semibold))
+                }
+            }
 
             PauseSection()
 
