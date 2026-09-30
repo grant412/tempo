@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Notifier.shared.start()
         model.onNudge = { Notifier.shared.post($0) }
         model.start()
+        BlockEnforcer.shared.start()
         ClassifierWorker.shared.start()
 
         let defaults = UserDefaults.standard

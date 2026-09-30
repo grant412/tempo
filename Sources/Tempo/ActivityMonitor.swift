@@ -50,6 +50,11 @@ final class ActivityMonitor {
         case .tab(let url, let tabTitle)?:
             domain = Domain.normalize(url)
             if let tabTitle, !tabTitle.isEmpty { title = String(tabTitle.prefix(300)) }
+            // An adult site is recorded like incognito: no title, no domain (site blocking spec 3.5).
+            if let d = domain, BlockEnforcer.shared.isAdult(d) {
+                title = nil
+                domain = nil
+            }
         case nil:
             // A browser whose tab read failed (Automation denied, timeout, error) records no
             // title, so an incognito window's title can never slip in through Accessibility.

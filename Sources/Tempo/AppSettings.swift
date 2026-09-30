@@ -10,6 +10,10 @@ enum AppSettings {
         static let distractionMinutes = "distractionMinutes"
         static let keyRejected = "keyRejected"
         static let firstLaunchDone = "firstLaunchDone"
+        static let blockEnabled = "blockEnabled"
+        static let blockWeekdayMask = "blockWeekdayMask"
+        static let blockStartMinute = "blockStartMinute"
+        static let blockEndMinute = "blockEndMinute"
     }
 
     static func registerDefaults() {
@@ -17,6 +21,8 @@ enum AppSettings {
             Keys.idleMinutes: 5, Keys.breakEnabled: true, Keys.breakMinutes: 90,
             Keys.distractionEnabled: true, Keys.distractionMinutes: 20,
             Keys.keyRejected: false, Keys.firstLaunchDone: false,
+            Keys.blockEnabled: false, Keys.blockWeekdayMask: BlockSchedule.workweekMask,
+            Keys.blockStartMinute: 540, Keys.blockEndMinute: 1020,
         ])
     }
 
@@ -30,6 +36,15 @@ enum AppSettings {
                              breakMinutes: max(1, d.integer(forKey: Keys.breakMinutes)),
                              distractionEnabled: d.bool(forKey: Keys.distractionEnabled),
                              distractionMinutes: max(1, d.integer(forKey: Keys.distractionMinutes)))
+    }
+
+    /// The Distraction block window (site blocking spec 4.1). Defaults: off, Mon to Fri, 9 to 5.
+    static var blockSchedule: BlockSchedule {
+        let d = UserDefaults.standard
+        return BlockSchedule(enabled: d.bool(forKey: Keys.blockEnabled),
+                             weekdays: BlockSchedule.weekdays(mask: d.integer(forKey: Keys.blockWeekdayMask)),
+                             startMinute: min(max(d.integer(forKey: Keys.blockStartMinute), 0), 1439),
+                             endMinute: min(max(d.integer(forKey: Keys.blockEndMinute), 0), 1439))
     }
 }
 
