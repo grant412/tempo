@@ -63,7 +63,10 @@
     photo.src = "distraction.jpg";
     photo.hidden = false;
     document.getElementById("eyebrow").textContent = "Distraction block";
-    document.getElementById("headline").textContent = LINES[Math.floor(Math.random() * LINES.length)];
+    // YouTube always gets his tweet; every other site gets a random line.
+    const youtube = /(^|\.)youtube\.com$|^youtu\.be$/.test(site);
+    document.getElementById("headline").textContent =
+      youtube ? LINES[0] : LINES[Math.floor(Math.random() * LINES.length)];
     detail.textContent = until ? site + " is blocked until " + until + "." : site + " is blocked.";
     detail.hidden = false;
   }

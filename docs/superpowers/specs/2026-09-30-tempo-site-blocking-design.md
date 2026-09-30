@@ -82,7 +82,8 @@ opened as a `file://` URL with a query string:
   (`Blocking/distraction.jpg`, shown 4:3 at the card's full width) sits at the top of the card,
   the headline is one line in his voice picked at random on each load (the `LINES` list in the
   page: his October 2022 tweet "A focused fool can accomplish more than a distracted genius.",
-  and 10 lines paraphrased from the persona corpus, not quotes), and the "is blocked until"
+  and 10 lines paraphrased from the persona corpus, not quotes). YouTube (`youtube.com`, any
+  `*.youtube.com`, `youtu.be`) always shows the tweet, and the "is blocked until"
   sentence moves under it in muted 15 px.
 - Adult: `?kind=adult`. Shows "This site is blocked." and never names the site. No photo and
   no line; the image is never loaded.
