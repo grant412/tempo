@@ -81,7 +81,8 @@ opened as a `file://` URL with a query string:
   past midnight. Changed 2026-09-30 at Grant's request: a photo of Alex Hormozi
   (`Blocking/distraction.jpg`, shown 4:3 at the card's full width) sits at the top of the card,
   the headline is one line in his voice picked at random on each load (the `LINES` list in the
-  page, drafted from the persona corpus, paraphrased, not quotes), and the "is blocked until"
+  page: his October 2022 tweet "A focused fool can accomplish more than a distracted genius.",
+  and 10 lines paraphrased from the persona corpus, not quotes), and the "is blocked until"
   sentence moves under it in muted 15 px.
 - Adult: `?kind=adult`. Shows "This site is blocked." and never names the site. No photo and
   no line; the image is never loaded.
