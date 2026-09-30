@@ -6,8 +6,10 @@ Nudges after long stretches and distraction streaks. Everything stays on this Ma
 one-time Claude lookup for apps and sites it has never seen (only with an API key in Settings).
 
 Design: `docs/superpowers/specs/2026-09-26-tempo-design.md`, plus
-`docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md` (Stop tracking and focus timer)
-Plans: `docs/superpowers/plans/2026-09-26-tempo.md`, `docs/superpowers/plans/2026-09-26-tempo-focus-timer.md`
+`docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md` (Stop tracking and focus timer) and
+`docs/superpowers/specs/2026-09-30-tempo-site-blocking-design.md` (site blocking)
+Plans: `docs/superpowers/plans/2026-09-26-tempo.md`, `docs/superpowers/plans/2026-09-26-tempo-focus-timer.md`,
+`docs/superpowers/plans/2026-09-30-tempo-site-blocking.md`
 
 ## Build and install
 
@@ -47,9 +49,11 @@ and run `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
 
 ## Privacy
 
-Chrome incognito windows and adult sites are not recorded (no title, no site). Blocking reads
-every tab, incognito and private ones included, but never stores what it reads. Safari Private
-windows are not detected for tracking, so they are recorded like any other window.
+Chrome incognito windows, and adult sites in Chrome and Safari, are not recorded (no title, no
+site). Blocking reads every tab, incognito and private ones included, but never stores what it
+reads. Safari Private windows are not detected for tracking, so they are recorded like any other
+window. Other browsers (Arc, Brave, Edge, Firefox) are not read or blocked: their window titles
+are recorded, private windows and adult pages included.
 
 ## Where things live
 

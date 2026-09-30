@@ -90,10 +90,10 @@ Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
 - [ ] After install, re-grant Accessibility, then approve "Tempo wants to control Google Chrome" and the Safari prompt if they appear again.
 - [ ] Settings, Blocking: the adult row shows "21,192 SITES". The Distraction row shows Mon to Fri, 9:00 AM to 5:00 PM, switched off.
 - [ ] Adult: open a known adult site in a normal Chrome tab, a Chrome incognito window, and a Safari private window. Each is replaced by "This site is blocked." within about a second.
-- [ ] Adult privacy: afterwards, the segments query from "Tracking accuracy" shows no adult domain or title, and `grep -i porn ~/Library/Logs/Tempo.log` shows only "blocked an adult site" lines.
+- [ ] Adult privacy: afterwards, the segments query from "Tracking accuracy" shows no adult domain or title, and `grep -i porn ~/Library/Logs/Tempo.log` prints nothing, and the log has "blocked an adult site" lines.
 - [ ] SafeSearch: a Google image search, a Bing search, and a DuckDuckGo search each reload once with safe=active, adlt=strict, or kp=1 in the address.
-- [ ] Distraction: set the window to start a minute from now, switch it on, and press Save. When it starts, an open YouTube tab (front and background) is replaced within 5 seconds with "youtube.com is blocked until ...". Back from the blocked page is replaced again.
 - [ ] Staged edits: with the block on and outside its hours, step the From time past the To time without pressing Save. Nothing locks. Press Cancel and the old hours come back. Then make a change that covers now and press Save: the "Start the Distraction block now?" alert appears, and Cancel leaves everything unlocked.
+- [ ] Distraction: set the window to start a minute from now, switch it on, and press Save. When it starts, an open YouTube tab (front and background) is replaced within 5 seconds with "youtube.com is blocked until ...". Back from the blocked page is replaced again.
 - [ ] Lock: during the window the switch, days, and times are disabled with "Locked until ...". In Rules, youtube.com shows the lock badge; github.com can still be moved to Distraction. In the timeline inspector, a Distraction site shows the lock badge.
 - [ ] The menu shows "Blocking Distraction until ..." during the window and nothing after it.
 - [ ] Outside the window, YouTube loads normally and every control is editable.

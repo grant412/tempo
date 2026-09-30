@@ -141,8 +141,8 @@ Blocking
   (`Theme.chip`), like `SmallButton(fill:)`.
 - Times use `DatePicker` with `.hourAndMinute`, labels hidden.
 - The switch, day chips, and times edit a draft. Save writes all four settings at once (Cancel
-  reverts). If the saved schedule covers now, Save first asks "Start the Distraction block now?"
-  with the lock's end time, so an in-between edit can never start a lock.
+  reverts). If the draft covers now, Save first asks "Start the Distraction block now?" with
+  the lock's end time, so an in-between edit can never start a lock.
 - An end time at or before the start time runs past midnight (9:00 PM to 1:00 AM). The detail
   line then adds "Ends the next day." Equal times mean a full 24 hours.
 - The adult row chip shows the loaded entry count. If the list failed to load, it shows a red
