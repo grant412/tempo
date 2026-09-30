@@ -17,26 +17,54 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
     padding: 36px 40px; max-width: 540px; width: 100%;
   }
+  .photo {
+    display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 32%;
+    border-radius: 12px; background: var(--bg); margin: 0 0 24px;
+  }
+  .photo[hidden] { display: none; }
   .eyebrow {
     font: 600 11px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--muted); margin: 0 0 14px;
   }
   h1 { font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; margin: 0; overflow-wrap: anywhere; }
+  .detail { font-size: 15px; line-height: 1.45; color: var(--muted); margin: 14px 0 0; overflow-wrap: anywhere; }
+  .detail[hidden] { display: none; }
 </style>
 </head>
 <body>
 <main class="card">
+  <img class="photo" id="photo" alt="" hidden>
   <p class="eyebrow" id="eyebrow">Tempo</p>
   <h1 id="headline">This site is blocked.</h1>
+  <p class="detail" id="detail" hidden></p>
 </main>
 <script>
+  // Distraction only: one line in Hormozi's voice, picked fresh on every block.
+  const LINES = [
+    "That tab is you wanting a cookie right now. Close it.",
+    "Saying no to this puts money in the bank. Yes spends it.",
+    "You can't do two damn things and beat the guy doing one.",
+    "Most of building anything is eating glass. This tab is just candy.",
+    "Every switch costs you twice: once to leave the work, once to find it again.",
+    "That empty focus block was your payday. Don't blow it in here.",
+    "Smart people wait for the reward. Close the tab and wait.",
+    "Lazy people buy distraction. Winners buy skills. Which are you right now?",
+    "Volume makes you good. This tab makes you nothing. Go get reps.",
+    "Your work builds you. This tab builds jack shit.",
+    "Focus is like beating an addiction. You don't win once. Win again right now.",
+  ];
   const q = new URLSearchParams(location.search);
   if (q.get("kind") === "distraction") {
     const site = q.get("site") || "This site";
     const until = q.get("until");
+    const photo = document.getElementById("photo");
+    const detail = document.getElementById("detail");
+    photo.src = "distraction.jpg";
+    photo.hidden = false;
     document.getElementById("eyebrow").textContent = "Distraction block";
-    document.getElementById("headline").textContent =
-      until ? site + " is blocked until " + until + "." : site + " is blocked.";
+    document.getElementById("headline").textContent = LINES[Math.floor(Math.random() * LINES.length)];
+    detail.textContent = until ? site + " is blocked until " + until + "." : site + " is blocked.";
+    detail.hidden = false;
   }
 </script>
 </body>

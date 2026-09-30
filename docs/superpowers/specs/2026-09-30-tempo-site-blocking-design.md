@@ -78,8 +78,13 @@ opened as a `file://` URL with a query string:
 - Distraction: `?kind=distraction&site=youtube.com&until=Wednesday%20at%205:00%20PM`. Shows
   "youtube.com is blocked until Wednesday at 5:00 PM." with a small "Distraction block" eyebrow.
   The end always names the day (never "today" or "tomorrow"), because the page can stay open
-  past midnight.
-- Adult: `?kind=adult`. Shows "This site is blocked." and never names the site.
+  past midnight. Changed 2026-09-30 at Grant's request: a photo of Alex Hormozi
+  (`Blocking/distraction.jpg`, shown 4:3 at the card's full width) sits at the top of the card,
+  the headline is one line in his voice picked at random on each load (the `LINES` list in the
+  page, drafted from the persona corpus, paraphrased, not quotes), and the "is blocked until"
+  sentence moves under it in muted 15 px.
+- Adult: `?kind=adult`. Shows "This site is blocked." and never names the site. No photo and
+  no line; the image is never loaded.
 
 The page reads its query with a few lines of script and fills in the text (the text is inserted
 as text, never as HTML). Tab title: "Blocked". Styling follows Tempo: paper background
