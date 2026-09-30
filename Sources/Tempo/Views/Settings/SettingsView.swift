@@ -9,11 +9,13 @@ struct SettingsView: View {
     @AppStorage(AppSettings.Keys.breakMinutes) private var breakMinutes = 90
     @AppStorage(AppSettings.Keys.distractionEnabled) private var distractionEnabled = true
     @AppStorage(AppSettings.Keys.distractionMinutes) private var distractionMinutes = 20
-    @AppStorage(AppSettings.Keys.blockEnabled) private var blockEnabled = false
-    @AppStorage(AppSettings.Keys.blockWeekdayMask) private var blockWeekdayMask = BlockSchedule.workweekMask
-    @AppStorage(AppSettings.Keys.blockStartMinute) private var blockStartMinute = 540
-    @AppStorage(AppSettings.Keys.blockEndMinute) private var blockEndMinute = 1020
     @ObservedObject private var blocker = BlockEnforcer.shared
+    /// The Distraction block as stored, and the edits not saved yet. Only Save writes, so a
+    /// half-edited schedule never reaches the enforcer (site blocking spec 4.1).
+    @State private var savedSchedule = AppSettings.blockSchedule
+    @State private var draft = AppSettings.blockSchedule
+    /// The end of the window a Save would start right away, while its confirmation is up.
+    @State private var confirmEnd: Date?
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var apiKey = ""
     @State private var keySaved = Keychain.read() != nil
@@ -148,10 +150,19 @@ struct SettingsView: View {
         .onChange(of: breakMinutes) { _, _ in model.applySettings() }
         .onChange(of: distractionEnabled) { _, _ in model.applySettings() }
         .onChange(of: distractionMinutes) { _, _ in model.applySettings() }
-        .onChange(of: blockEnabled) { _, _ in BlockEnforcer.shared.refreshWindow() }
-        .onChange(of: blockWeekdayMask) { _, _ in BlockEnforcer.shared.refreshWindow() }
-        .onChange(of: blockStartMinute) { _, _ in BlockEnforcer.shared.refreshWindow() }
-        .onChange(of: blockEndMinute) { _, _ in BlockEnforcer.shared.refreshWindow() }
+        .onChange(of: blocker.isLocked) { _, locked in
+            // A half-edited draft never lingers under a running block.
+            guard locked else { return }
+            savedSchedule = AppSettings.blockSchedule
+            draft = savedSchedule
+            confirmEnd = nil
+        }
+        .alert("Start the Distraction block now?", isPresented: confirmingStart, presenting: confirmEnd) { _ in
+            Button("Start block") { applyDraft() }
+            Button("Cancel", role: .cancel) {}
+        } message: { end in
+            Text("Distraction sites will be blocked right away and stay locked until \(Format.clock(end)).")
+        }
         .task { await loadPermissions() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
             Task { await loadPermissions() }
@@ -180,7 +191,34 @@ struct SettingsView: View {
 
     private var blockDetail: String {
         let base = "Blocks every site in Distraction during these hours. Locked while it runs."
-        return blockEndMinute <= blockStartMinute ? base + " Ends the next day." : base
+        return draft.runsPastMidnight ? base + " Ends the next day." : base
+    }
+
+    private var confirmingStart: Binding<Bool> {
+        Binding(get: { confirmEnd != nil }, set: { if !$0 { confirmEnd = nil } })
+    }
+
+    /// Applies the draft, first asking when it would start a block right away.
+    private func saveDraft() {
+        if let w = draft.window(containing: Date(), calendar: .autoupdatingCurrent) {
+            confirmEnd = w.end
+        } else {
+            applyDraft()
+        }
+    }
+
+    /// Writes the draft and applies it at once. Refuses while a block runs, so Settings can
+    /// never shorten or end a running block.
+    private func applyDraft() {
+        let blocker = BlockEnforcer.shared
+        blocker.refreshWindow()
+        guard !blocker.isLocked else {
+            draft = savedSchedule
+            return
+        }
+        AppSettings.saveBlockSchedule(draft)
+        savedSchedule = draft
+        blocker.refreshWindow()
     }
 
     private var distractionBlockRow: some View {
@@ -196,26 +234,33 @@ struct SettingsView: View {
                 if let w = blocker.distractionWindow {
                     StatusChip(text: "Locked until \(Format.clock(w.end))", foreground: Theme.ink, background: Theme.chip)
                 }
-                Toggle("Distraction block", isOn: $blockEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                Toggle("Distraction block", isOn: $draft.enabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
                     .disabled(blocker.isLocked)
             }
             HStack(spacing: 6) {
                 ForEach(Self.weekdayOrder, id: \.self) { day in
-                    DayChip(label: Calendar.current.shortWeekdaySymbols[day - 1],
-                            on: blockWeekdayMask & (1 << (day - 1)) != 0) {
-                        blockWeekdayMask ^= (1 << (day - 1))
+                    DayChip(label: Calendar.current.shortWeekdaySymbols[day - 1], on: draft.weekdays.contains(day)) {
+                        if draft.weekdays.contains(day) { draft.weekdays.remove(day) } else { draft.weekdays.insert(day) }
                     }
                 }
                 Spacer(minLength: 16)
                 Text("From").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
-                DatePicker("Start", selection: minuteBinding($blockStartMinute), displayedComponents: .hourAndMinute)
+                DatePicker("Start", selection: minuteBinding($draft.startMinute), displayedComponents: .hourAndMinute)
                     .labelsHidden()
                 Text("To").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
-                DatePicker("End", selection: minuteBinding($blockEndMinute), displayedComponents: .hourAndMinute)
+                DatePicker("End", selection: minuteBinding($draft.endMinute), displayedComponents: .hourAndMinute)
                     .labelsHidden()
             }
             .disabled(blocker.isLocked)
             .opacity(blocker.isLocked ? 0.5 : 1)
+            if draft != savedSchedule && !blocker.isLocked {
+                HStack(spacing: 8) {
+                    Text("Changes apply when you save.").font(Theme.ui(12.5)).foregroundStyle(Theme.muted)
+                    Spacer(minLength: 12)
+                    SmallButton("Cancel") { draft = savedSchedule }
+                    SmallButton("Save") { saveDraft() }
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 13)

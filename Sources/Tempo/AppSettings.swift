@@ -46,6 +46,16 @@ enum AppSettings {
                              startMinute: min(max(d.integer(forKey: Keys.blockStartMinute), 0), 1439),
                              endMinute: min(max(d.integer(forKey: Keys.blockEndMinute), 0), 1439))
     }
+
+    /// Writes the whole schedule at once. Settings calls it only on Save, so a half-edited
+    /// schedule never reaches the enforcer.
+    static func saveBlockSchedule(_ s: BlockSchedule) {
+        let d = UserDefaults.standard
+        d.set(s.enabled, forKey: Keys.blockEnabled)
+        d.set(BlockSchedule.mask(weekdays: s.weekdays), forKey: Keys.blockWeekdayMask)
+        d.set(s.startMinute, forKey: Keys.blockStartMinute)
+        d.set(s.endMinute, forKey: Keys.blockEndMinute)
+    }
 }
 
 enum AppPaths {
