@@ -7,6 +7,7 @@ struct RulesSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
     @State private var names: [String: String] = [:]
+    @ObservedObject private var blocker = BlockEnforcer.shared
 
     private var rows: [Rule] {
         model.rules
@@ -31,11 +32,16 @@ struct RulesSheet: View {
                     Text(name(for: rule)).font(Theme.ui(13.5)).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Text(sourceLabel(rule.source)).font(Theme.mono(11)).foregroundStyle(Theme.muted)
-                    CategoryMenu(current: rule.category ?? .uncategorized) { model.setCategory(rule.key, $0) }
-                    Button { model.deleteRule(rule.key) } label: { Image(systemName: "trash") }
-                        .buttonStyle(.borderless)
-                        .help("Remove rule")
-                        .accessibilityLabel("Remove rule for \(name(for: rule))")
+                    if model.isLocked(rule.key) {
+                        LockedBadge(until: blocker.distractionWindow?.end)
+                        Image(systemName: "trash").hidden()
+                    } else {
+                        CategoryMenu(current: rule.category ?? .uncategorized) { model.setCategory(rule.key, $0) }
+                        Button { model.deleteRule(rule.key) } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless)
+                            .help("Remove rule")
+                            .accessibilityLabel("Remove rule for \(name(for: rule))")
+                    }
                 }
                 .padding(.vertical, 2)
             }

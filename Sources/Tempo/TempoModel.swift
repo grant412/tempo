@@ -335,15 +335,33 @@ final class TempoModel: ObservableObject {
     func select(_ block: Block) { selectedBlockID = block.id }
 
     func setCategory(_ key: ItemKey, _ category: CategoryID) {
+        if lockRefuses(key, category) { return }
         do { try store?.setUserRule(key, category: category, at: Date()) } catch { Log.error("set rule: \(error)") }
         reloadRules()
         refresh()
     }
 
     func deleteRule(_ key: ItemKey) {
+        if lockRefuses(key, nil) { return }
         do { try store?.deleteRule(key, at: Date()) } catch { Log.error("delete rule: \(error)") }
         reloadRules()
         refresh()
+    }
+
+    /// True while a Distraction window runs and this site resolves to Distraction
+    /// (site blocking spec 3.4). Views show a lock in place of its category menu.
+    func isLocked(_ key: ItemKey) -> Bool {
+        BlockEnforcer.shared.isLocked && key.kind == .domain && resolver.category(for: key) == .distraction
+    }
+
+    /// The one place the lock is enforced, so no path around the UI can take a site out of
+    /// Distraction during a window. `category` nil means delete.
+    private func lockRefuses(_ key: ItemKey, _ category: CategoryID?) -> Bool {
+        let blocker = BlockEnforcer.shared
+        blocker.refreshWindow()
+        guard blocker.isLocked, !RuleLock.allows(key, newCategory: category, rules: rules) else { return false }
+        Log.info("rule change for \(key.key) refused: Distraction block running")
+        return true
     }
 
     /// nil pauses until the next local midnight.

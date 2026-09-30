@@ -57,6 +57,7 @@ struct InspectorView: View {
 
 struct ItemRow: View {
     @EnvironmentObject var model: TempoModel
+    @ObservedObject private var blocker = BlockEnforcer.shared
     let item: BlockItem
     let maxDuration: TimeInterval
 
@@ -82,7 +83,11 @@ struct ItemRow: View {
                 }
                 .frame(height: 4)
             }
-            CategoryMenu(current: item.category) { model.setCategory(item.key, $0) }
+            if model.isLocked(item.key) {
+                LockedBadge(until: blocker.distractionWindow?.end)
+            } else {
+                CategoryMenu(current: item.category) { model.setCategory(item.key, $0) }
+            }
         }
         .padding(.vertical, 6)
     }

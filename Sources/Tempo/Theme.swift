@@ -181,3 +181,24 @@ extension View {
         modifier(Card(padding: padding))
     }
 }
+
+/// Stands in for a category menu while the Distraction block locks it (site blocking spec 3.4).
+struct LockedBadge: View {
+    let until: Date?
+
+    private var text: String { until.map { "Locked until \(Format.clock($0))" } ?? "Locked" }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "lock.fill").font(.system(size: 9, weight: .bold))
+            Text("Locked").font(Theme.ui(12, .semibold))
+        }
+        .padding(.horizontal, 8)
+        .frame(width: CategoryMenu.labelWidth, height: 28, alignment: .leading)
+        .foregroundStyle(Theme.ink)
+        .background(Theme.chip, in: RoundedRectangle(cornerRadius: 8))
+        .help(text)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+}
