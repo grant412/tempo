@@ -195,6 +195,15 @@ Nothing is shown for adult blocking, since it is always on.
   starting yesterday. Start and end are wall-clock times built from the day's date components, so DST
   days keep the chosen times. End after start: same day. End at or before start: next day at
   the end time. Start inclusive, end exclusive.
+- `func lock(containing date: Date, calendar: Calendar) -> DateInterval?`: the window containing
+  `date`, extended while a window starts exactly at its end (equal times on neighboring selected
+  days). After 8 joins the end is `.distantFuture`, a lock that never ends.
+- `func neverUnlocks(calendar: Calendar) -> Bool`: true when enabled and the lock from some
+  window start in one week never ends.
+
+**`Format.lockEnd(_ end: Date, now: Date, calendar: Calendar) -> String`** (added to
+`Format.swift`): "5:00 PM" when the end is today, "tomorrow at 1:00 AM", "Friday at 9:00 AM" on
+a later day, "further notice" for `.distantFuture`. Every surface that shows a lock end uses it.
 
 **`BlockPolicy`** (new, `BlockPolicy.swift`)
 - `enum BlockAction: Equatable { case allow, blockAdult, blockDistraction(site: String, until: Date), rewrite(String) }`
@@ -232,7 +241,8 @@ Nothing is shown for adult blocking, since it is always on.
 **`BlockEnforcer`** (new, `BlockEnforcer.swift`, `@MainActor`, `ObservableObject`, shared)
 - Loads `AdultSites` once from `Bundle.main` `Blocking/oisd-nsfw-small.txt`; missing or
   unreadable logs an error and uses an empty list (words and nothing else still work).
-- `@Published private(set) var distractionWindow: DateInterval?`: the Distraction window running now,
+- `@Published private(set) var distractionWindow: DateInterval?`: the Distraction lock running now
+  (`BlockSchedule.lock(containing:calendar:)`, so its end is when blocking really stops),
   assigned only when it changes so views do not redraw every second.
 - `func isAdult(_ host: String) -> Bool` for the tracker.
 - A 1 second `Timer` on the main run loop (`.common` mode), started from `TempoModel.start()`
@@ -240,7 +250,7 @@ Nothing is shown for adult blocking, since it is always on.
   tick sweep all tabs of each running supported browser; otherwise check the front tab when the
   frontmost app is a supported browser.
 - For each tab: `BlockPolicy(adult:, resolver: TempoModel.shared.resolver, window:)`. Blocks call
-  `setURL` with the blocked page URL (`Format.clock(until)` for the time). A rewrite is skipped
+  `setURL` with the blocked page URL (`Format.lockEnd(until, now:, calendar:)` for the time). A rewrite is skipped
   when the same tab was rewritten from the same URL in the last 5 seconds (guards a reload loop
   if an engine strips the parameter).
 - Failed reads or writes skip that check and are logged at most once a minute per browser.
@@ -294,7 +304,11 @@ Unit tests (Swift Testing, TempoCore):
 - `BlockSchedule`: disabled; weekday in and out; start inclusive and end exclusive; an overnight
   window belongs to its start day (Fri 9 PM to 1 AM covers Sat 12:30 AM with only Fri selected,
   not Sat 12:30 AM with only Sat selected); equal times are 24 hours; a DST day keeps wall-clock
-  times.
+  times. `lock`: a normal window is its own lock; Mon to Fri 9:00 AM to 9:00 AM from Monday
+  10 AM ends Saturday 9 AM; all seven days 12:00 AM to 12:00 AM never ends (`neverUnlocks` is
+  true), while Mon to Fri 9 to 5 unlocks.
+- `Format.lockEnd`: today, tomorrow, a weekday name, "further notice", and the calendar's time
+  zone.
 - `BlockPolicy`: adult wins over everything and applies outside the window; Distraction only
   inside it; a subdomain blocked by its parent's rule; SafeSearch rewrite outside the window;
   non-http URLs, including the blocked page, are allowed.

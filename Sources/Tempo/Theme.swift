@@ -186,7 +186,9 @@ extension View {
 struct LockedBadge: View {
     let until: Date?
 
-    private var text: String { until.map { "Locked until \(Format.clock($0))" } ?? "Locked" }
+    private var text: String {
+        until.map { "Locked until \(Format.lockEnd($0, now: Date(), calendar: .autoupdatingCurrent))" } ?? "Locked"
+    }
 
     var body: some View {
         HStack(spacing: 5) {

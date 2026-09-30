@@ -14,8 +14,10 @@ struct SettingsView: View {
     /// half-edited schedule never reaches the enforcer (site blocking spec 4.1).
     @State private var savedSchedule = AppSettings.blockSchedule
     @State private var draft = AppSettings.blockSchedule
-    /// The end of the window a Save would start right away, while its confirmation is up.
+    /// The end of the lock a Save would start right away, while its confirmation is up.
     @State private var confirmEnd: Date?
+    /// True while the "This schedule never ends" alert is up.
+    @State private var neverEnds = false
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var apiKey = ""
     @State private var keySaved = Keychain.read() != nil
@@ -157,11 +159,16 @@ struct SettingsView: View {
             draft = savedSchedule
             confirmEnd = nil
         }
-        .alert("Start the Distraction block now?", isPresented: confirmingStart, presenting: confirmEnd) { _ in
-            Button("Start block") { applyDraft() }
+        .alert("Start the Distraction block now?", isPresented: confirmingStart, presenting: confirmEnd) { end in
+            Button("Start block") { startBlock(shown: end) }
             Button("Cancel", role: .cancel) {}
         } message: { end in
-            Text("Distraction sites will be blocked right away and stay locked until \(Format.clock(end)).")
+            Text("Distraction sites will be blocked right away and stay locked until \(Self.lockEnd(end)).")
+        }
+        .alert("This schedule never ends", isPresented: $neverEnds) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("These hours join into a block with no gap, so it would never unlock. Leave a gap between the end and the next start.")
         }
         .task { await loadPermissions() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
@@ -198,13 +205,30 @@ struct SettingsView: View {
         Binding(get: { confirmEnd != nil }, set: { if !$0 { confirmEnd = nil } })
     }
 
-    /// Applies the draft, first asking when it would start a block right away.
+    private static func lockEnd(_ end: Date) -> String {
+        Format.lockEnd(end, now: Date(), calendar: .autoupdatingCurrent)
+    }
+
+    /// Applies the draft, first asking when it would start a block right away. A schedule whose
+    /// hours join into a lock that never ends is refused.
     private func saveDraft() {
-        if let w = draft.window(containing: Date(), calendar: .autoupdatingCurrent) {
-            confirmEnd = w.end
+        let calendar = Calendar.autoupdatingCurrent
+        if draft.enabled && draft.neverUnlocks(calendar: calendar) {
+            neverEnds = true
+        } else if let lock = draft.lock(containing: Date(), calendar: calendar) {
+            confirmEnd = lock.end
         } else {
             applyDraft()
         }
+    }
+
+    /// "Start block" in the confirmation. The lock is worked out again first, so an alert left
+    /// open across a boundary applies what the draft means now. A draft that no longer covers
+    /// now just saves. One that would now lock until a different time than the alert showed is
+    /// not applied: it stays staged, and Save asks again with the new time.
+    private func startBlock(shown end: Date) {
+        if let lock = draft.lock(containing: Date(), calendar: .autoupdatingCurrent), lock.end != end { return }
+        applyDraft()
     }
 
     /// Writes the draft and applies it at once. Refuses while a block runs, so Settings can
@@ -232,7 +256,7 @@ struct SettingsView: View {
                 .frame(maxWidth: 400, alignment: .leading)
                 Spacer(minLength: 12)
                 if let w = blocker.distractionWindow {
-                    StatusChip(text: "Locked until \(Format.clock(w.end))", foreground: Theme.ink, background: Theme.chip)
+                    StatusChip(text: "Locked until \(Self.lockEnd(w.end))", foreground: Theme.ink, background: Theme.chip)
                 }
                 Toggle("Distraction block", isOn: $draft.enabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
                     .disabled(blocker.isLocked)

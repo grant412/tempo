@@ -8,8 +8,9 @@ import TempoCore
 final class BlockEnforcer: ObservableObject {
     static let shared = BlockEnforcer()
 
-    /// The Distraction window running now, nil outside it. Assigned only when it changes, so
-    /// views do not redraw every second.
+    /// The Distraction lock running now, nil outside it: the window containing now joined with
+    /// any window that starts where it ends, so its end is when blocking really stops. Assigned
+    /// only when it changes, so views do not redraw every second.
     @Published private(set) var distractionWindow: DateInterval?
     let adult: AdultSites
     /// False when the bundled list could not be read (Settings shows "List missing").
@@ -51,7 +52,7 @@ final class BlockEnforcer: ObservableObject {
 
     /// Recomputes the window now, after a Settings change or before a rule change.
     func refreshWindow() {
-        let w = AppSettings.blockSchedule.window(containing: Date(), calendar: calendar)
+        let w = AppSettings.blockSchedule.lock(containing: Date(), calendar: calendar)
         if w != distractionWindow { distractionWindow = w }
     }
 
@@ -91,7 +92,8 @@ final class BlockEnforcer: ObservableObject {
                 logFailure(tab.ref.bundleID, now: now)
             }
         case .blockDistraction(let site, let until):
-            let page = blockedPage(["kind": "distraction", "site": site, "until": Format.clock(until)])
+            let end = Format.lockEnd(until, now: now, calendar: calendar)
+            let page = blockedPage(["kind": "distraction", "site": site, "until": end])
             if tabs.setURL(page, at: tab.ref) {
                 Log.info("blocked \(site)")
             } else {

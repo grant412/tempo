@@ -34,7 +34,8 @@ struct MenuBarView: View {
             if let w = blocker.distractionWindow {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.fill").font(.system(size: 12, weight: .semibold))
-                    Text("Blocking Distraction until \(Format.clock(w.end))").font(Theme.ui(13.5, .semibold))
+                    Text("Blocking Distraction until \(Format.lockEnd(w.end, now: Date(), calendar: .autoupdatingCurrent))")
+                        .font(Theme.ui(13.5, .semibold))
                 }
             }
 
