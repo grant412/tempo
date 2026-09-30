@@ -3,7 +3,8 @@ import AppKit
 /// Reads and sets tab URLs in Chrome and Safari for site blocking (site blocking spec 5.2).
 /// Unlike the tracker's `BrowserTabReader` it sees every tab, incognito and private ones
 /// included; nothing read here is stored. Callers check that the browser is running first,
-/// because a `tell` would launch it.
+/// because a `tell` would launch it. Each script checks `running` again (which never launches
+/// the app), so a browser that quits between the caller's check and the script is not relaunched.
 @MainActor
 final class BrowserTabs {
     struct TabRef: Hashable {
@@ -27,6 +28,7 @@ final class BrowserTabs {
     /// character. `sep` is set outside the `tell` because `tab` names a tab object inside it.
     private static let frontSources: [String: String] = [
         chrome: """
+        if application id "com.google.Chrome" is not running then return ""
         set sep to character id 9
         with timeout of 1 second
           tell application id "com.google.Chrome"
@@ -37,6 +39,7 @@ final class BrowserTabs {
         end timeout
         """,
         safari: """
+        if application id "com.apple.Safari" is not running then return ""
         set sep to character id 9
         with timeout of 1 second
           tell application id "com.apple.Safari"
@@ -54,6 +57,7 @@ final class BrowserTabs {
     /// Two Apple Events per window (URLs in bulk), not one per tab. A window that errors is skipped.
     private static let allSources: [String: String] = [
         chrome: """
+        if application id "com.google.Chrome" is not running then return ""
         set sep to character id 9
         set out to ""
         with timeout of 1 second
@@ -72,6 +76,7 @@ final class BrowserTabs {
         return out
         """,
         safari: """
+        if application id "com.apple.Safari" is not running then return ""
         set sep to character id 9
         set out to ""
         with timeout of 1 second
@@ -116,9 +121,11 @@ final class BrowserTabs {
             .replacingOccurrences(of: "\"", with: "\\\"") + "\""
         let source = """
         with timeout of 1 second
-          tell application id "\(ref.bundleID)"
-            set URL of tab \(ref.tab) of window id \(ref.window) to \(quoted)
-          end tell
+          if application id "\(ref.bundleID)" is running then
+            tell application id "\(ref.bundleID)"
+              set URL of tab \(ref.tab) of window id \(ref.window) to \(quoted)
+            end tell
+          end if
         end timeout
         """
         guard let script = NSAppleScript(source: source) else { return false }
