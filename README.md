@@ -11,6 +11,26 @@ Design: `docs/superpowers/specs/2026-09-26-tempo-design.md`, plus
 Plans: `docs/superpowers/plans/2026-09-26-tempo.md`, `docs/superpowers/plans/2026-09-26-tempo-focus-timer.md`,
 `docs/superpowers/plans/2026-09-30-tempo-site-blocking.md`
 
+## Install on a new Mac
+
+Needs a Mac with Apple silicon (M1 or later) on macOS 15 or later. No Xcode.
+
+1. Install Apple's command line tools if they are not there yet: `xcode-select --install`.
+2. Get the code: `gh repo clone grant412/tempo ~/Desktop/tempo` (the repo is private, so accept
+   the GitHub invite first), then `cd ~/Desktop/tempo`.
+3. `scripts/setup-signing.sh` once. It makes a local "Tempo Dev" signing identity, so macOS keeps
+   Tempo's permissions when you update. Click Always Allow on the keychain dialog.
+4. `scripts/install.sh`. It builds, installs to /Applications, and starts Tempo at login.
+5. Grant the permissions below: Accessibility, then Allow when macOS asks to let Tempo control
+   Chrome and Safari, then notifications.
+6. Optional: paste your own Claude API key in Settings, Sorting, so new apps and sites get a
+   category. Without it they stay Uncategorized until you sort them.
+
+To update later: `git pull` then `scripts/install.sh`.
+
+Everything Tempo records stays on that Mac. Adult blocking and SafeSearch are on from the first
+launch and have no switch (see Blocking below).
+
 ## Build and install
 
     swift test                 # logic tests (Swift Testing)
