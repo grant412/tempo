@@ -113,8 +113,8 @@ right now.
   no title, and the domain never reaches the classifier queue or Claude.
 - The blocker reads incognito and private tabs to enforce blocking. Those reads live in memory
   for one check and are never written anywhere.
-- The log names Distraction sites it blocks ("blocked youtube.com") but never adult ones
-  ("blocked an adult site").
+- The log never names a blocked site ("blocked a Distraction site", "blocked an adult site"),
+  since the sweep reads incognito and private tabs too.
 
 ## 4. Screens
 

@@ -94,8 +94,9 @@ final class BlockEnforcer: ObservableObject {
         case .blockDistraction(let site, let until):
             let end = Format.lockEnd(until, now: now, calendar: calendar)
             let page = blockedPage(["kind": "distraction", "site": site, "until": end])
+            // The sweep reads incognito and private tabs too, so the log never names the site.
             if tabs.setURL(page, at: tab.ref) {
-                Log.info("blocked \(site)")
+                Log.info("blocked a Distraction site")
             } else {
                 logFailure(tab.ref.bundleID, now: now)
             }
