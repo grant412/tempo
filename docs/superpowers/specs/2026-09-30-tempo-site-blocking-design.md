@@ -189,7 +189,7 @@ Nothing is shown for adult blocking, since it is always on.
   `startMinute: Int`, `endMinute: Int` (minutes after midnight, 0 to 1439).
 - `func window(containing date: Date, calendar: Calendar) -> DateInterval?`: nil when disabled.
   A window belongs to the day it starts on: it checks the window starting today and the one
-  starting yesterday. Start and end are wall-clock times set with `date(bySettingHour:)`, so DST
+  starting yesterday. Start and end are wall-clock times built from the day's date components, so DST
   days keep the chosen times. End after start: same day. End at or before start: next day at
   the end time. Start inclusive, end exclusive.
 
@@ -238,7 +238,7 @@ Nothing is shown for adult blocking, since it is always on.
   if an engine strips the parameter).
 - Failed reads or writes skip that check and are logged at most once a minute per browser.
 
-**`AppSettings`**: keys `blockEnabled` (false), `blockWeekdays` ([2, 3, 4, 5, 6]),
+**`AppSettings`**: keys `blockEnabled` (false), `blockWeekdayMask` (62, Monday to Friday; bit `weekday - 1`),
 `blockStartMinute` (540), `blockEndMinute` (1020), and `static var blockSchedule: BlockSchedule`.
 
 **`ActivityMonitor`**: in the `.tab` case, when `BlockEnforcer.shared.isAdult(domain)`, set title
