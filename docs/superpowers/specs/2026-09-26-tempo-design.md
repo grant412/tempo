@@ -85,8 +85,12 @@ never carries meaning alone.
 ## 4. Screens
 
 ### 4.1 Menu bar item
-Label: the three-blocks glyph plus today's total in Geist Mono ("8h 41m"). Shows "Paused"
-while paused. Clicking opens a 348pt popover (SwiftUI `MenuBarExtra`, window style):
+Label: the three-blocks glyph, then the time at the keyboard, a dot, and today's total, like
+Rize's without the seconds: "1:09 · 8h 41m" (changed 2026-09-30). The first time is the
+keyboard line's stretch (below) as h:mm ("0:42" under an hour), counted to now, so it starts
+over at "0:00" after a break of 15 minutes or more. While away 15 minutes or more, or before
+anything is recorded today, only the total shows ("8h 41m"). Digits are monospaced. Shows
+"Paused" while paused. Clicking opens a 348pt popover (SwiftUI `MenuBarExtra`, window style):
 - "Today so far" total (display 46pt), with the light and dark switch at its top right: a
   56x28 pill with a sun and a moon, the knob under the one in use.
 - The keyboard line. A gap of 15 minutes or more with nothing recorded is a break. Back from

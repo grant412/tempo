@@ -14,7 +14,7 @@ struct MenuBarLabel: View {
     /// One Text with the clock symbol inside it: a MenuBarExtra label is not guaranteed to lay
     /// out more than one image and one text (focus timer spec 3.2).
     private var label: Text {
-        guard focus.timer != nil else { return Text(model.menuBarText) }
+        guard focus.timer != nil else { return Text(model.menuBarText).monospacedDigit() }
         return Text("\(model.menuBarText)  \(Image(systemName: "timer")) \(Format.countdown(focus.remaining))")
             .monospacedDigit()
     }

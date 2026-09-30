@@ -33,6 +33,8 @@ so none of this has run on the real machine yet. Work top to bottom; the setup s
 - [ ] Block labels stay readable in dark (ink on the light fills, white on Code, Research, Admin).
 - [ ] Back from a break of 15 minutes or more: the menu and the dashboard's Today card read "at the keyboard since (time you came back), after (break) away".
 - [ ] A 10 minute break does not restart the line.
+- [ ] Menu bar reads like Rize without the seconds, "1:09 · 4h 20m": the first time matches "at the keyboard since" in the menu (now minus that time), the second is today's total.
+- [ ] Away 15 minutes or more: the menu bar shows only the total. Back at the keyboard: it restarts at "0:00 · (total)". Paused and Stopped still read "Paused" and "Stopped".
 
 ## Tracking accuracy
 
@@ -89,7 +91,10 @@ Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
 - [ ] End now: the pop-up slides into the top right corner with the summary and "N min of M", ready to type. Save stores the note.
 - [ ] Discard: nothing appears on the timeline.
 - [ ] Let a 5 min timer run out while typing in another app: one "Glass" ching, and the pop-up slides into the top right corner with the summary and "What did you get done?". Your typing stays in the other app until you click the pop-up. No notification banner.
-- [ ] The pop-up floats over a full screen app and on every Space, and stays until Skip, Save, or the x.
+- [ ] The pop-up floats over a full screen app and on every Space. After End now or a timeline click it stays until Skip, Save, or the x.
+- [ ] Run-out, pointer kept away: a thin bar along the bottom of the pop-up shrinks from right to left over 5 seconds, then the pop-up slides out to the right. The band is on the timeline with no note; clicking it reopens the pop-up with no bar.
+- [ ] Run-out, pointer moved over the pop-up before the bar ends: the bar fades and the pop-up stays, even after moving the pointer away again.
+- [ ] Run-out with the pointer already sitting in the top right corner: no bar, the pop-up stays.
 - [ ] Timeline: the band spans the session with a clock badge. Hover shows the note. Click opens the pop-up with the note filled in.
 - [ ] Sleep through a run-out: the ching and the pop-up come on wake and the session ends at the planned end.
 - [ ] A timer run while tracking is stopped, outside the usual hours, still shows its band on the timeline.

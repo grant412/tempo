@@ -74,4 +74,26 @@ struct KeyboardStretchTests {
         #expect(KeyboardStretch.make(segments: [late], day: F.day, now: F.at(12))
             == .atKeyboard(since: F.at(0), awayBefore: nil))
     }
+
+    /// Rize's menu bar, without the seconds: time at the keyboard, a dot, then today's total.
+    @Test func menuBarShowsTheStretchThenTheTotal() {
+        let morning = F.wednesday.filter { $0.end <= F.at(772) }
+        let s = KeyboardStretch.make(segments: morning, day: F.day, now: F.at(772))
+        #expect(KeyboardStretch.menuBar(s, total: 4 * 3600 + 20 * 60, now: F.at(772)) == "4:40 · 4h 20m")
+    }
+
+    @Test func menuBarStretchStartsOverAfterABreak() {
+        let s = KeyboardStretch.make(segments: F.wednesday, day: F.day, now: F.at(815))
+        #expect(KeyboardStretch.menuBar(s, total: 3600, now: F.at(815)) == "0:00 · 1h 00m")
+        #expect(KeyboardStretch.menuBar(s, total: 3600, now: F.at(857)) == "0:42 · 1h 00m")
+    }
+
+    @Test func menuBarIsJustTheTotalWhileAway() {
+        let s = KeyboardStretch.make(segments: F.wednesday, day: F.day, now: F.at(1100))
+        #expect(KeyboardStretch.menuBar(s, total: 8 * 3600 + 41 * 60, now: F.at(1100)) == "8h 41m")
+    }
+
+    @Test func menuBarIsJustTheTotalBeforeAnythingIsRecorded() {
+        #expect(KeyboardStretch.menuBar(nil, total: 0, now: F.at(600)) == "0m")
+    }
 }

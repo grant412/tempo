@@ -39,16 +39,18 @@ final class FocusController: ObservableObject {
 
     func discard() { clear() }
 
-    /// Runs out with the chime and the pop-up, which leaves the app in front alone. Tempo plays
-    /// the chime itself, so notification settings and Focus modes cannot mute it. A Mac asleep at
-    /// the end catches up on wake; the session still ends at the planned end.
+    /// Runs out with the chime and the pop-up, which leaves the app in front alone and closes
+    /// itself after 5 s unless the pointer comes over it. Tempo plays the chime itself, so
+    /// notification settings and Focus modes cannot mute it. A Mac asleep at the end catches up
+    /// on wake; the session still ends at the planned end.
     private func tick() {
         now = Date()
         guard let timer, timer.isDone(at: now) else { return }
         clear()
         if let session = TempoModel.shared.saveFocusSession(timer, end: timer.end) {
             Self.chime?.play()
-            WindowManager.shared.showFocusNotes(sessionID: session.id, justEnded: true, activate: false)
+            WindowManager.shared.showFocusNotes(sessionID: session.id, justEnded: true, activate: false,
+                                                autoClose: true)
         }
     }
 

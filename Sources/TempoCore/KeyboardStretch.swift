@@ -44,5 +44,13 @@ public enum KeyboardStretch: Equatable, Sendable {
         }
     }
 
+    /// The menu bar's text, like Rize's without the seconds: "1:09 · 4h 20m" at the keyboard,
+    /// read at `now`; just the total "4h 20m" while away or before anything is recorded today.
+    public static func menuBar(_ stretch: KeyboardStretch?, total: TimeInterval, now: Date) -> String {
+        let totalText = Format.duration(total)
+        guard case .atKeyboard(let since, _)? = stretch else { return totalText }
+        return Format.elapsed(now.timeIntervalSince(since)) + " \u{00B7} " + totalText
+    }
+
     private static func noBreak(_ s: String) -> String { s.replacingOccurrences(of: " ", with: "\u{00A0}") }
 }

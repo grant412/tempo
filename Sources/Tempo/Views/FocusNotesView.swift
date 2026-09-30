@@ -11,12 +11,14 @@ struct FocusNotesView: View {
     let recap: SessionRecap?
     /// True when the timer just ran out or was ended; false when reopened from the timeline.
     let justEnded: Bool
+    @ObservedObject var countdown: FocusNotesCountdown
     @State private var text: String
 
-    init(session: FocusSession?, recap: SessionRecap?, justEnded: Bool) {
+    init(session: FocusSession?, recap: SessionRecap?, justEnded: Bool, countdown: FocusNotesCountdown) {
         self.session = session
         self.recap = recap
         self.justEnded = justEnded
+        self.countdown = countdown
         _text = State(initialValue: session?.note ?? "")
     }
 
@@ -32,9 +34,27 @@ struct FocusNotesView: View {
         .frame(width: Self.width)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Theme.panel)
+        .overlay(alignment: .bottomLeading) { countdownBar }
         .foregroundStyle(Theme.ink)
         .ignoresSafeArea()
         .themed()
+    }
+
+    /// The run-out countdown: a 3 pt ink bar on the bottom edge that shrinks from the right to
+    /// the left over 5 s. Gone once the pointer comes over the pop-up.
+    @ViewBuilder private var countdownBar: some View {
+        if let deadline = countdown.deadline {
+            TimelineView(.animation) { context in
+                let left = max(0, deadline.timeIntervalSince(context.date)) / FocusNotesCountdown.length
+                Rectangle()
+                    .fill(Theme.ink)
+                    .frame(height: 3)
+                    .scaleEffect(x: min(1, left), y: 1, anchor: .leading)
+            }
+            .transition(.opacity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 
     /// "18 min of 25 min" when ended early, unless both round to the same label (End now in the

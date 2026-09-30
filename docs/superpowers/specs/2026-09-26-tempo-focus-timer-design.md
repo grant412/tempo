@@ -108,7 +108,7 @@ The live block card already hides while paused, so it hides while stopped too.
 
 | State | Label |
 |---|---|
-| Tracking | `[glyph] 3h 12m` (unchanged) |
+| Tracking | `[glyph] 1:09 · 3h 12m`, time at the keyboard then today's total (main spec 4.1, changed 2026-09-30) |
 | Timed pause | `[glyph] Paused` (unchanged) |
 | Stopped | `[glyph] Stopped` |
 | Any of the above with a timer running | the same, then two spaces, the `timer` SF Symbol, and the time left, e.g. `[glyph] 3h 12m  (clock) 24:13` |
@@ -138,8 +138,9 @@ Center opens that session's pop-up.
 
 A floating panel (`WindowManager.showFocusNotes`), 400 pt wide and as tall as its content,
 16 pt in from the top right corner of the screen under the pointer, modeled on Rize's
-"focus session ended" panel. It floats over every app and Space, including full screen, and
-stays until closed. It slides in from the right. On run-out it does not take focus from the
+"focus session ended" panel. It floats over every app and Space, including full screen. It
+slides in from the right. On End now or a timeline click it stays until closed; on run-out it
+closes itself (below). On run-out it does not take focus from the
 app in front, so typing elsewhere never lands in the notes box; a click on it makes it key.
 End now and a timeline click make it key right away. Light or dark with the rest of the app.
 One pop-up at a time: opening it for another session replaces the content; opening it again
@@ -167,6 +168,14 @@ What did you get done?
 - The notes box is prefilled with the saved note when reopening a session.
 - **Save** (Cmd+Return) stores the trimmed note (empty text stores no note) and closes.
 - **Skip** and the x close without changing the note.
+- **Auto close on run-out (added 2026-09-30).** Once it has slid in, a 3 pt ink bar along the
+  bottom edge shrinks from the right to the left over 5 s. If the pointer never comes over the
+  pop-up, it slides back out to the right when the bar runs out, the same as Skip: the session
+  stays saved with no note and can be reopened from the timeline. The pointer coming over it
+  (an AppKit tracking area, so it works while another app is in front), a pointer already over
+  it when the bar would start, or a click during the slide-in stops the countdown for good; the
+  bar fades and the pop-up stays until Save, Skip, or the x. End now and a timeline click never
+  count down.
 
 ### 3.5 Timeline band
 

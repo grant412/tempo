@@ -9,6 +9,13 @@ public enum Format {
         return h > 0 ? "\(h)h " + String(format: "%02d", m) + "m" : "\(m)m"
     }
 
+    /// Time elapsed as h:mm, floored to the minute, with no seconds: "0:00", "0:42", "1:09",
+    /// "12:05". The menu bar's time at the keyboard, like Rize's.
+    public static func elapsed(_ seconds: TimeInterval) -> String {
+        let minutes = max(0, Int(seconds / 60))
+        return "\(minutes / 60):" + String(format: "%02d", minutes % 60)
+    }
+
     /// "8:12 AM", "5:41 PM".
     public static func clock(_ date: Date, timeZone: TimeZone = .current) -> String {
         let f = DateFormatter()

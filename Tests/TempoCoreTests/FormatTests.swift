@@ -97,4 +97,13 @@ struct FormatTests {
         #expect(Format.minutesLabel(36000) == "10 hours")
         #expect(Format.minutesLabel(5400) == "1h 30m")
     }
+
+    @Test func elapsedIsHoursColonMinutesFloored() {
+        #expect(Format.elapsed(0) == "0:00")
+        #expect(Format.elapsed(59) == "0:00")
+        #expect(Format.elapsed(42 * 60 + 50) == "0:42")
+        #expect(Format.elapsed(69 * 60 + 22) == "1:09")
+        #expect(Format.elapsed(12 * 3600 + 5 * 60) == "12:05")
+        #expect(Format.elapsed(-30) == "0:00")
+    }
 }

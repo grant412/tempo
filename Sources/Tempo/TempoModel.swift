@@ -248,7 +248,9 @@ final class TempoModel: ObservableObject {
     var isStopped: Bool { pausedUntil == .distantFuture }
     /// nil while paused or stopped: with tracking off, Tempo cannot tell whether Grant is there.
     var keyboardLine: String? { isPaused ? nil : keyboard?.line() }
-    var menuBarText: String { isStopped ? "Stopped" : isPaused ? "Paused" : Format.duration(today.total) }
+    var menuBarText: String {
+        isStopped ? "Stopped" : isPaused ? "Paused" : KeyboardStretch.menuBar(keyboard, total: today.total, now: now)
+    }
     var selectedBlock: Block? { layout.blocks.first { $0.id == selectedBlockID } }
 
     var dayTitle: String {
