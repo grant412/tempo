@@ -25,15 +25,16 @@ Goals (v1):
 - Claude fallback for apps and sites Tempo has never seen.
 - Launch at login, crash restart, data loss under a minute on a crash.
 
-Non-goals (v1): focus score, weekly report or trends, projects/clients/billing, dark mode,
+Non-goals (v1): focus score, weekly report or trends, projects/clients/billing,
 editing or adding categories, multi-device sync, Windows, screenshots or screen content,
 manual time entry, exports.
 
 ## 3. Look (locked)
 
 Mockups: Tempo canvas, page "Calendar", https://claude.ai/artifact/NcSz9NHBNHC9tgLXtXDFRB
-(artboards: Calendar light, Menu bar, Nudges, Settings). Light mode only. The dark
-calendar artboard is reference only and does not ship.
+(artboards: Calendar light, Menu bar, Nudges, Settings). Light is the default. Dark mode
+(added 2026-09-30) uses the CalendarDark artboard's tokens, switched by a sun and moon pill
+in the menu (4.1). Category fills and their labels are the same in both modes.
 
 Tokens:
 
@@ -49,6 +50,13 @@ Tokens:
 | chip | `#f1ece2` | Pills, app initials, week-strip track |
 | track | `#efeae0` | Bar tracks |
 | granted | `#15924b` on `#e4f5ea` | Permission "Granted" chip only |
+
+Dark values (light token in parentheses): bg `#121110`, panel `#1a1917`, line `#2a2825`,
+grid `#262420`, grid2 `#201f1c`, ink `#f3efe6`, muted `#a39d92` (6.5:1 on panel), chip and
+track `#26241f`, Away stripes `#22201d` (light: chip), granted `#5cc98a` on `#173524`, red
+`#f08a80` on `#3a1f1c` (light: `#c0382f` on `#fae8e6`), switches on `#7d776c` (light: ink;
+ink in dark would put the white knob on cream). Primary buttons stay ink with panel text,
+so they turn cream with dark text. The choice is saved in UserDefaults (`darkMode`).
 
 No amber or orange attention fills anywhere. "Needs a category" uses a white panel and the
 striped Uncategorized swatch.
@@ -79,7 +87,12 @@ never carries meaning alone.
 ### 4.1 Menu bar item
 Label: the three-blocks glyph plus today's total in Geist Mono ("8h 41m"). Shows "Paused"
 while paused. Clicking opens a 348pt popover (SwiftUI `MenuBarExtra`, window style):
-- "Today so far" total (display 46pt) and "at the keyboard since 8:12 AM".
+- "Today so far" total (display 46pt), with the light and dark switch at its top right: a
+  56x28 pill with a sun and a moon, the knob under the one in use.
+- The keyboard line. A gap of 15 minutes or more with nothing recorded is a break. Back from
+  one: "at the keyboard since 2:14 PM, after 2h 04m away"; no break yet today: "at the
+  keyboard since 8:12 AM"; nothing for 15 minutes now: "away from the keyboard since 12:10
+  PM". Hidden while paused or stopped. The dashboard's Today card uses the same line.
 - The live block, drawn like a timeline block (category fill, name, LIVE badge, duration,
   "4:32 PM to now, Claude, Terminal"). Hidden when idle or paused.
 - Category rows: swatch, name, bar scaled to the top category, duration. Only non-zero.

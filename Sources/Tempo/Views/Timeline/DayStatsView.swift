@@ -6,7 +6,7 @@ struct DayStatsView: View {
 
     private var subtitle: String {
         guard let first = model.summary.firstActivity else { return "Nothing tracked yet" }
-        if model.isShowingToday { return "at the keyboard since \(Format.clock(first))" }
+        if model.isShowingToday, let line = model.keyboardLine { return line }
         return "\(Format.clock(first)) to \(Format.clock(model.summary.lastActivity ?? first))"
     }
 

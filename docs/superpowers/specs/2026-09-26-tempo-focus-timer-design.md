@@ -13,9 +13,10 @@ Two additions to the menu bar dropdown:
    It is not saved, so any relaunch (login, reboot, crash restart) starts tracking again.
 2. **Focus timer.** A countdown Grant starts for a focus session or to time a block of work.
    Tracking keeps running underneath it. While it runs, the menu bar shows a clock and the
-   time left. When it ends, a notification offers "Write down what you got done", which opens
-   a notes window with a recap of what Tempo tracked in those minutes. Every finished session
-   is saved and drawn on the timeline as a band, with its note.
+   time left. When it ends, Tempo plays a short chime and a pop-up slides into the top right
+   corner with a summary of what Tempo tracked in those minutes and "What did you get done?"
+   (changed 2026-09-30 from a notification, see 3.3). Every finished session is saved and
+   drawn on the timeline as a band, with its note.
 
 ## 2. Decisions (from brainstorming)
 
@@ -26,9 +27,9 @@ Two additions to the menu bar dropdown:
 | Presets | 5 min, 15 min, 30 min, 1 hour, 2 hours, Custom (minutes). |
 | How presets open | Hovering the "Start a timer" row opens a popover beside it (click also opens it). Custom popover drawn in Tempo's style, not a native NSMenu. |
 | Menu bar while running | Clock icon and time left after today's total: `[glyph] 3h 12m  (clock) 24:13`. |
-| When the timer runs out | Notification with sound and a "Write down what you got done" button. |
-| Where notes are typed | A small Tempo window: session recap on top, multi-line notes box, Save and Skip. |
-| Timeline | Each session is a band on the day view. Hover shows the note, click opens the notes window. |
+| When the timer runs out | Tempo plays the macOS "Glass" chime and shows the pop-up in the top right corner (2026-09-30; was a notification). |
+| Where notes are typed | The pop-up: session summary on top, then "What did you get done?" with the notes box open, Save and Skip. |
+| Timeline | Each session is a band on the day view. Hover shows the note, click opens the pop-up. |
 | When a session is saved | At the end (run out or End now). A running timer lives in memory only; quitting or a crash mid-timer drops it. Grant accepted this. |
 
 ## 3. Screens
@@ -86,8 +87,8 @@ FOCUS TIMER
 
 The countdown is Geist Mono with monospaced digits and updates every second.
 
-- **End now** saves the session with the actual end time and opens the notes window right
-  away (no notification, Grant is already looking at Tempo).
+- **End now** saves the session with the actual end time and opens the pop-up right away,
+  ready to type in (no chime, Grant is already looking at Tempo).
 - **Discard** drops the timer. Nothing is saved.
 
 Only one timer runs at a time. Stopping or pausing tracking does not touch a running timer.
@@ -120,45 +121,52 @@ The label is built as one `Text` with the SF Symbol interpolated
 (`Text("\(total)  \(Image(systemName: "timer")) \(left)")`), because a `MenuBarExtra` label is
 not guaranteed to lay out more than one image and one text.
 
-### 3.3 Timer done notification
+### 3.3 Timer done (changed 2026-09-30)
 
-Posted when a running timer reaches its end (the 1 s tick sees `now >= end`). If the Mac was
-asleep at that moment, it posts on wake and the session still ends at the planned end.
+When a running timer reaches its end (the 1 s tick sees `now >= end`), Tempo saves the
+session, plays the macOS "Glass" sound itself (`NSSound`, one short ching), and shows the
+pop-up (3.4). Tempo plays the sound, so notification settings and Focus modes cannot mute it.
+If the Mac was asleep at that moment, both happen on wake and the session still ends at the
+planned end.
 
-- Title: `Timer done`
-- Body: `25 min, 2:10 to 2:35 PM`
-- Sound: default
-- Action button: `Write down what you got done` (foreground)
-- Category id `timer-done`, notification id `timer-<session id>`, `userInfo["sessionID"]`.
+This replaced the "Timer done" notification after Grant's first live test: the banner was
+easy to miss, played no sound, and hid its "Write down what you got done" button until
+hovered. No timer notification is posted now. Clicking an old one still in Notification
+Center opens that session's pop-up.
 
-Clicking the button or the banner body opens the notes window for that session. Nudge
-notifications keep their current behavior (open the timeline).
+### 3.4 Pop-up
 
-If notifications are off, the session is still saved; notes can be added from the timeline.
-
-### 3.4 Notes window
-
-AppKit window hosting SwiftUI (via `WindowManager`), about 440 x 560 pt, titled "Focus notes",
-light only. One window at a time: opening it for another session replaces the content.
+A floating panel (`WindowManager.showFocusNotes`), 400 pt wide and as tall as its content,
+16 pt in from the top right corner of the screen under the pointer, modeled on Rize's
+"focus session ended" panel. It floats over every app and Space, including full screen, and
+stays until closed. It slides in from the right. On run-out it does not take focus from the
+app in front, so typing elsewhere never lands in the notes box; a click on it makes it key.
+End now and a timeline click make it key right away. Light or dark with the rest of the app.
+One pop-up at a time: opening it for another session replaces the content; opening it again
+for the session it shows only brings it forward, so a draft survives.
 
 ```
-What did you get done?                     (Bricolage, ~26 pt)
-2:10 to 2:35 PM, 25 min                    (muted; "18 min of 25" when ended early)
-
-TRACKED IN THIS SESSION
-[category bars for the session, same CategoryBarRow as the dropdown]
-Terminal, Claude, github.com               (top 3 apps or sites, muted)
-
-[ multi-line notes box, placeholder "What you got done, what's next..." ]
-
-                                   [Skip]  [Save]
+(timer) FOCUS TIMER                                    [x]
+Your focus timer is done.                  (Bricolage 24; "Your focus session" from the timeline)
+3:18 PM to 3:23 PM, 5 min                  (muted; "18 min of 25 min" when ended early)
+-----------------------------------------------------------
+4m               97%               0m
+at the keyboard  of the session    distraction
+TOP CATEGORIES
+[top 3 category bars, same CategoryBarRow as the dropdown]
+mail.google.com, n8n.io, docs.google.com   (top 3 apps or sites, muted)
+-----------------------------------------------------------
+What did you get done?
+[ notes box, 96 pt, open and empty ]
+                                              [Skip] [Save]
 ```
 
-- The recap is built from the segments that overlap the session, clipped to it. If none:
-  "Nothing tracked in this session."
+- The summary is built from the segments that overlap the session, clipped to it. "Of the
+  session" is time at the keyboard over the session's length. If nothing was tracked, the
+  summary reads "Nothing tracked in this session."
 - The notes box is prefilled with the saved note when reopening a session.
 - **Save** (Cmd+Return) stores the trimmed note (empty text stores no note) and closes.
-- **Skip** closes without changing the note.
+- **Skip** and the x close without changing the note.
 
 ### 3.5 Timeline band
 
@@ -168,7 +176,7 @@ Each saved session overlapping the shown day draws on `DayCanvas`:
   session's start to its end, clamped to the visible range.
 - A 16 pt ink circle with a white `timer` symbol centered on the bar's top.
 - Hover (`.help`): the note, or "Focus timer, 25 min, no notes yet".
-- Click: opens the notes window for that session.
+- Click: opens the pop-up for that session.
 - The legend next to "nudge sent" gains a "focus timer" key with the same badge.
 
 The toolbar status pill reads "Stopped" (muted dot) while stopped. The toolbar's Pause menu is
@@ -220,13 +228,13 @@ unchanged.
   `@Published now`. Owns a 1 s `Timer` (tolerance 0.1, `.common` run loop mode) that runs
   only while a timer is active, so the rest of the app is not redrawn every second.
   `start(seconds:)`, `endNow()`, `discard()`. On each tick, if done: save the session with
-  `end = timer.end`, post the notification, clear. `endNow()` saves with `end = now` and
-  opens the notes window.
-- `Notifier`: registers the `timer-done` category and action at start. `postTimerDone(_:)`.
-  `didReceive` routes `timer-done` responses (default action or the button) to
-  `WindowManager.showFocusNotes(sessionID:)`; everything else keeps opening the timeline.
-- `WindowManager.showFocusNotes(sessionID:)`: one "focus-notes" window; replaces its root
-  view each time it is shown.
+  `end = timer.end`, clear, play the chime, show the pop-up without focus. `endNow()` saves
+  with `end = now` and shows the pop-up with focus.
+- `Notifier`: posts no timer notifications (since 2026-09-30). `didReceive` still routes an
+  old `timer-done` notification to `WindowManager.showFocusNotes(sessionID:)`; everything
+  else keeps opening the timeline.
+- `WindowManager.showFocusNotes(sessionID:justEnded:activate:)`: one floating pop-up panel
+  (3.4); replaces its root view each time it is shown for another session.
 - Views: `Views/FocusTimerSection.swift` (idle row, popover, running row),
   `Views/FocusNotesView.swift`, `MenuBarLabel` (single `Text`), `PauseSection` (Stop),
   `DayCanvas` (band and legend), `StatusPill` (Stopped).
@@ -234,7 +242,7 @@ unchanged.
 ## 5. Error handling
 
 - Store writes that fail are logged (`Log.error`) like every other write. A failed session
-  insert means no notification and no notes window; the timer still clears.
+  insert means no chime and no pop-up; the timer still clears.
 - Notes window opened for an id that no longer exists shows "This session could not be
   found." with a Close button.
 - Custom minutes outside 1 to 600 or not a whole number: Start stays disabled.
@@ -253,12 +261,12 @@ Unit (Swift Testing, `Tests/TempoCoreTests`):
 
 Manual (added to `docs/hands-on-checklist.md` under "Stop tracking and focus timer"): stop and
 resume, hover popover, each preset, custom, menu bar countdown, End now, Discard, run out with
-the Mac awake, notification button, notes save and reopen, timeline band hover and click,
+the Mac awake (chime and pop-up), notes save and reopen, timeline band hover and click,
 relaunch while stopped tracks again.
 
 ## 7. Out of scope
 
 - Saving a running timer across quit or crash.
-- Pausing a timer, repeating timers, Pomodoro cycles, sounds other than the default.
+- Pausing a timer, repeating timers, Pomodoro cycles, a choice of chime sounds.
 - Stats or reports over focus sessions beyond the timeline band.
 - Starting a timer from the timeline window.

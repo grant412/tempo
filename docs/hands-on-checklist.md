@@ -25,6 +25,15 @@ so none of this has run on the real machine yet. Work top to bottom; the setup s
 - [ ] Blocks are clickable (ring moves), hover shows tooltips.
 - [ ] It opens scrolled to now. Scroll away, close, reopen later: it re-centers on now.
 
+## Dark mode and the keyboard line
+
+- [ ] The sun and moon pill sits at the top right of the menu, beside "Today so far", and the menu is no taller than before.
+- [ ] Click it: the menu, dashboard, Settings, Rules, focus notes, and the timer popover all turn dark at once, title bars and popover arrow included. Click again: all light.
+- [ ] Quit and relaunch in dark: it opens dark. Settings switches that are on read clearly (white knob on gray-brown).
+- [ ] Block labels stay readable in dark (ink on the light fills, white on Code, Research, Admin).
+- [ ] Back from a break of 15 minutes or more: the menu and the dashboard's Today card read "at the keyboard since (time you came back), after (break) away".
+- [ ] A 10 minute break does not restart the line.
+
 ## Tracking accuracy
 
 - [ ] Rows look right after a few minutes of Terminal and Chrome:
@@ -77,11 +86,12 @@ Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
 - [ ] Each preset starts the right length. Custom: 45 works; 0, 601, 4.5, and letters keep Start disabled; Return starts it.
 - [ ] Menu bar shows the total, then the clock and time left, ticking every second without jitter. Over an hour shows h:mm:ss.
 - [ ] Stopping or pausing tracking leaves a running timer counting.
-- [ ] End now: the notes window opens with the recap and "N min of M". Save stores the note.
+- [ ] End now: the pop-up slides into the top right corner with the summary and "N min of M", ready to type. Save stores the note.
 - [ ] Discard: nothing appears on the timeline.
-- [ ] Let a 5 min timer run out: "Timer done" banner with sound and a "Write down what you got done" button. The button and a banner click both open the notes window.
-- [ ] Timeline: the band spans the session with a clock badge. Hover shows the note. Click opens the notes window with the note filled in.
-- [ ] Sleep through a run-out: the banner shows on wake and the session ends at the planned end.
+- [ ] Let a 5 min timer run out while typing in another app: one "Glass" ching, and the pop-up slides into the top right corner with the summary and "What did you get done?". Your typing stays in the other app until you click the pop-up. No notification banner.
+- [ ] The pop-up floats over a full screen app and on every Space, and stays until Skip, Save, or the x.
+- [ ] Timeline: the band spans the session with a clock badge. Hover shows the note. Click opens the pop-up with the note filled in.
+- [ ] Sleep through a run-out: the ching and the pop-up come on wake and the session ends at the planned end.
 - [ ] A timer run while tracking is stopped, outside the usual hours, still shows its band on the timeline.
 - [ ] Custom field inside the popover takes typing and Return.
 

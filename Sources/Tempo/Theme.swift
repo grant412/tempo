@@ -1,29 +1,61 @@
+import AppKit
 import SwiftUI
 import TempoCore
 
+private func rgb(_ hex: String) -> (Double, Double, Double) {
+    var value: UInt64 = 0
+    Scanner(string: hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))).scanHexInt64(&value)
+    return (Double((value >> 16) & 0xff) / 255, Double((value >> 8) & 0xff) / 255, Double(value & 0xff) / 255)
+}
+
 extension Color {
     init(hex: String) {
-        var value: UInt64 = 0
-        Scanner(string: hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))).scanHexInt64(&value)
-        self.init(.sRGB, red: Double((value >> 16) & 0xff) / 255, green: Double((value >> 8) & 0xff) / 255,
-                  blue: Double(value & 0xff) / 255, opacity: 1)
+        let (r, g, b) = rgb(hex)
+        self.init(.sRGB, red: r, green: g, blue: b, opacity: 1)
     }
 }
 
+extension NSColor {
+    convenience init(hex: String, alpha: CGFloat = 1) {
+        let (r, g, b) = rgb(hex)
+        self.init(srgbRed: r, green: g, blue: b, alpha: alpha)
+    }
+}
+
+/// Light values are the locked Calendar artboard; dark values are its CalendarDark artboard.
+/// Each token resolves from the view's color scheme, which `.themed()` sets from the menu's
+/// sun and moon switch.
 enum Theme {
-    static let bg = Color(hex: "#f6f3ec")
-    static let panel = Color.white
-    static let line = Color(hex: "#e7e1d5")
-    static let grid = Color(hex: "#ece6da")
-    static let grid2 = Color(hex: "#f3efe7")
-    static let ink = Color(hex: "#1d1b18")
-    static let muted = Color(hex: "#6b655b")
-    static let chip = Color(hex: "#f1ece2")
-    static let track = Color(hex: "#efeae0")
-    static let granted = Color(hex: "#15924b")
-    static let grantedBg = Color(hex: "#e4f5ea")
+    static let bg = pair("#f6f3ec", "#121110")
+    static let panel = pair("#ffffff", "#1a1917")
+    static let line = pair("#e7e1d5", "#2a2825")
+    static let grid = pair("#ece6da", "#262420")
+    static let grid2 = pair("#f3efe7", "#201f1c")
+    static let ink = pair("#1d1b18", "#f3efe6")
+    static let muted = pair("#6b655b", "#a39d92")
+    static let chip = pair("#f1ece2", "#26241f")
+    static let track = pair("#efeae0", "#26241f")
+    /// The stripes in an Away gap on the timeline.
+    static let hatch = pair("#f1ece2", "#22201d")
+    static let granted = pair("#15924b", "#5cc98a")
+    static let grantedBg = pair("#e4f5ea", "#173524")
+    static let red = pair("#c0382f", "#f08a80")
+    static let redSoft = pair("#fae8e6", "#3a1f1c")
+    /// A switch that is on. Ink in light; in dark, ink would put the white knob on cream.
+    static let switchOn = pair("#1d1b18", "#7d776c")
+    static let shadow = pair(NSColor(hex: "#1d1b18", alpha: 0.06), NSColor(hex: "#000000", alpha: 0.35))
+    /// Ink on category fills. The fills stay the same in dark mode, so their labels do too.
+    static let blockInk = Color(hex: "#1d1b18")
     static let stripeA = Color(hex: "#b8b3a8")
     static let stripeB = Color(hex: "#c9c4ba")
+
+    private static func pair(_ light: String, _ dark: String) -> Color {
+        pair(NSColor(hex: light), NSColor(hex: dark))
+    }
+
+    private static func pair(_ light: NSColor, _ dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light })
+    }
 
     static func display(_ size: CGFloat) -> Font { .custom("Bricolage Grotesque", size: size).weight(.heavy) }
     static func ui(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font { .custom("Geist", size: size).weight(weight) }
@@ -35,7 +67,7 @@ enum Theme {
 
 extension CategoryID {
     var fill: Color { Color(hex: fillHex) }
-    var labelColor: Color { lightText ? .white : Theme.ink }
+    var labelColor: Color { lightText ? .white : Theme.blockInk }
 }
 
 /// Uncategorized: 135 degree stripes of #b8b3a8 and #c9c4ba.
@@ -159,10 +191,10 @@ struct StatusChip: View {
     }
 }
 
-/// A card's white rounded surface. The shadow sits on this shape alone, so nothing inside a card casts one.
+/// A card's rounded panel surface. The shadow sits on this shape alone, so nothing inside a card casts one.
 struct CardSurface: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 18).fill(Theme.panel).shadow(color: Theme.ink.opacity(0.06), radius: 15, y: 10)
+        RoundedRectangle(cornerRadius: 18).fill(Theme.panel).shadow(color: Theme.shadow, radius: 15, y: 10)
     }
 }
 
@@ -218,7 +250,7 @@ struct DayChip: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(on ? Color.white : Theme.ink)
+        .foregroundStyle(on ? Theme.panel : Theme.ink)
         .background(on ? Theme.ink : Theme.chip, in: RoundedRectangle(cornerRadius: 7))
         .accessibilityLabel(label)
         .accessibilityAddTraits(on ? .isSelected : [])

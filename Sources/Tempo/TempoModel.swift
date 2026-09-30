@@ -18,6 +18,8 @@ final class TempoModel: ObservableObject {
     @Published private(set) var summary = DaySummary.empty
     @Published private(set) var today = DaySummary.empty
     @Published private(set) var liveBlock: Block?
+    /// Today's "at the keyboard since" line, restarted by any break of 15 minutes or more.
+    @Published private(set) var keyboard: KeyboardStretch?
     @Published private(set) var week: [WeekDay] = []
     @Published private(set) var nudgeMarks: [NudgeRecord] = []
     @Published private(set) var focusSessions: [FocusSession] = []
@@ -196,16 +198,19 @@ final class TempoModel: ObservableObject {
             layout = BlockBuilder.build(segments: daySegs, day: day, resolver: resolver, openSegmentEnd: openEnd)
             summary = DaySummary.make(segments: daySegs, day: day, resolver: resolver, layout: layout)
             week = WeekSummary.days(segments: weekSegs, week: weekInterval, calendar: calendar, resolver: resolver)
+            let todaySegs: [Segment]
             if isShowingToday {
+                todaySegs = daySegs
                 today = summary
                 liveBlock = layout.blocks.last(where: \.isLive)
             } else {
-                let todaySegs = withLive(try store.segments(overlapping: todayInterval))
+                todaySegs = withLive(try store.segments(overlapping: todayInterval))
                 let todayLayout = BlockBuilder.build(segments: todaySegs, day: todayInterval, resolver: resolver,
                                                      openSegmentEnd: openEnd)
                 today = DaySummary.make(segments: todaySegs, day: todayInterval, resolver: resolver, layout: todayLayout)
                 liveBlock = todayLayout.blocks.last(where: \.isLive)
             }
+            keyboard = KeyboardStretch.make(segments: todaySegs, day: todayInterval, now: now)
             nudgeMarks = try store.nudges(in: day)
             focusSessions = try store.focusSessions(overlapping: day)
             needsCategory = computeNeedsCategory(daySegs, day: day)
@@ -241,6 +246,8 @@ final class TempoModel: ObservableObject {
     var isPaused: Bool { pausedUntil.map { Date() < $0 } ?? false }
     var isShowingToday: Bool { calendar.isDate(shownDay, inSameDayAs: now) }
     var isStopped: Bool { pausedUntil == .distantFuture }
+    /// nil while paused or stopped: with tracking off, Tempo cannot tell whether Grant is there.
+    var keyboardLine: String? { isPaused ? nil : keyboard?.line() }
     var menuBarText: String { isStopped ? "Stopped" : isPaused ? "Paused" : Format.duration(today.total) }
     var selectedBlock: Block? { layout.blocks.first { $0.id == selectedBlockID } }
 

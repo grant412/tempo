@@ -29,9 +29,6 @@ struct SettingsView: View {
     @State private var notifications = PermissionState.notAsked
     @State private var showRules = false
 
-    private static let red = Color(hex: "#c0382f")
-    private static let redSoft = Color(hex: "#fae8e6")
-
     /// Monday first, as Calendar weekday numbers.
     private static let weekdayOrder = [2, 3, 4, 5, 6, 7, 1]
 
@@ -40,7 +37,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 section("General") {
                     row("Open at login", "Starts quietly in the menu bar and restarts itself if it ever crashes.") {
-                        Toggle("Open at login", isOn: $openAtLogin).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                        Toggle("Open at login", isOn: $openAtLogin).toggleStyle(.switch).labelsHidden().tint(Theme.switchOn)
                     }
                     divider
                     row("Stop counting after", "Minutes with no keyboard or mouse input. Screen lock and sleep stop it right away.") {
@@ -56,14 +53,14 @@ struct SettingsView: View {
                     row("Break nudge", "After this long at the keyboard without a five minute break.") {
                         HStack(spacing: 16) {
                             MinutesField(value: $breakMinutes, label: "Break nudge minutes")
-                            Toggle("Break nudge", isOn: $breakEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                            Toggle("Break nudge", isOn: $breakEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.switchOn)
                         }
                     }
                     divider
                     row("Distraction nudge", "After this long in Distraction without switching away.") {
                         HStack(spacing: 16) {
                             MinutesField(value: $distractionMinutes, label: "Distraction nudge minutes")
-                            Toggle("Distraction nudge", isOn: $distractionEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                            Toggle("Distraction nudge", isOn: $distractionEnabled).toggleStyle(.switch).labelsHidden().tint(Theme.switchOn)
                         }
                     }
                 }
@@ -73,7 +70,7 @@ struct SettingsView: View {
                         if blocker.adultListLoaded {
                             StatusChip(text: "\(blocker.adult.count.formatted()) sites")
                         } else {
-                            StatusChip(text: "List missing", foreground: Self.red, background: Self.redSoft)
+                            StatusChip(text: "List missing", foreground: Theme.red, background: Theme.redSoft)
                         }
                     }
                     divider
@@ -93,7 +90,7 @@ struct SettingsView: View {
                                 SmallButton("Save") { saveKey() }.disabled(apiKey.isEmpty)
                             }
                             if model.keyRejected {
-                                StatusChip(text: "Key rejected", foreground: Self.red, background: Self.redSoft)
+                                StatusChip(text: "Key rejected", foreground: Theme.red, background: Theme.redSoft)
                             } else if keySaved {
                                 StatusChip(text: "In Keychain")
                             }
@@ -145,7 +142,7 @@ struct SettingsView: View {
         .frame(minWidth: 760, minHeight: 560)
         .background(Theme.bg)
         .foregroundStyle(Theme.ink)
-        .environment(\.colorScheme, .light)
+        .themed()
         .onChange(of: openAtLogin) { _, on in
             do { if on { try LoginItem.enable() } else { try LoginItem.disable() } } catch { Log.error("login item: \(error)") }
         }
@@ -280,7 +277,7 @@ struct SettingsView: View {
                 if let w = blocker.distractionWindow {
                     StatusChip(text: "Locked until \(Self.lockEnd(w.end))", foreground: Theme.ink, background: Theme.chip)
                 }
-                Toggle("Distraction block", isOn: $draft.enabled).toggleStyle(.switch).labelsHidden().tint(Theme.ink)
+                Toggle("Distraction block", isOn: $draft.enabled).toggleStyle(.switch).labelsHidden().tint(Theme.switchOn)
                     .disabled(blocker.isLocked)
             }
             HStack(spacing: 6) {
@@ -362,7 +359,7 @@ struct SettingsView: View {
                 case .notRunning:
                     StatusChip(text: "Not running", foreground: Theme.muted, background: Theme.chip)
                 case .denied:
-                    StatusChip(text: "Not granted", foreground: Self.red, background: Self.redSoft)
+                    StatusChip(text: "Not granted", foreground: Theme.red, background: Theme.redSoft)
                     SmallButton("Open System Settings", action: open)
                 }
             }

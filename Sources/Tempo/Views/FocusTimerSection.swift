@@ -96,7 +96,7 @@ struct TimerPresetPopover: View {
         .frame(width: 236)
         .background(Theme.panel)
         .foregroundStyle(Theme.ink)
-        .environment(\.colorScheme, .light)
+        .themed()
     }
 
     private func startCustom() {

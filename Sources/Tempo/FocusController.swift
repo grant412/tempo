@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import TempoCore
 
 /// The running focus timer (focus timer spec 4.2). Memory only: a quit or crash drops it.
@@ -26,27 +26,34 @@ final class FocusController: ObservableObject {
         ticker = t
     }
 
-    /// Saves the session ending now and opens its notes. No notification: Grant is already here.
+    /// Saves the session ending now and opens its pop-up, ready to type in. No chime: Grant is
+    /// already here.
     func endNow() {
         guard let timer else { return }
         let end = min(Date(), timer.end)
         clear()
         if let session = TempoModel.shared.saveFocusSession(timer, end: end) {
-            WindowManager.shared.showFocusNotes(sessionID: session.id)
+            WindowManager.shared.showFocusNotes(sessionID: session.id, justEnded: true, activate: true)
         }
     }
 
     func discard() { clear() }
 
-    /// A Mac asleep at the end catches up on wake; the session still ends at the planned end.
+    /// Runs out with the chime and the pop-up, which leaves the app in front alone. Tempo plays
+    /// the chime itself, so notification settings and Focus modes cannot mute it. A Mac asleep at
+    /// the end catches up on wake; the session still ends at the planned end.
     private func tick() {
         now = Date()
         guard let timer, timer.isDone(at: now) else { return }
         clear()
         if let session = TempoModel.shared.saveFocusSession(timer, end: timer.end) {
-            Notifier.shared.postTimerDone(session)
+            Self.chime?.play()
+            WindowManager.shared.showFocusNotes(sessionID: session.id, justEnded: true, activate: false)
         }
     }
+
+    /// macOS's "Glass": one short ching.
+    private static let chime = NSSound(named: "Glass")
 
     private func clear() {
         ticker?.invalidate()

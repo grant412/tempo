@@ -153,7 +153,7 @@ struct AwayView: View {
                     var p = Path()
                     p.move(to: CGPoint(x: x, y: size.height))
                     p.addLine(to: CGPoint(x: x + size.height, y: 0))
-                    ctx.stroke(p, with: .color(Theme.chip), lineWidth: 5)
+                    ctx.stroke(p, with: .color(Theme.hatch), lineWidth: 5)
                     x += 10
                 }
             }

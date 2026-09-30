@@ -14,6 +14,7 @@ enum AppSettings {
         static let blockWeekdayMask = "blockWeekdayMask"
         static let blockStartMinute = "blockStartMinute"
         static let blockEndMinute = "blockEndMinute"
+        static let darkMode = "darkMode"
     }
 
     static func registerDefaults() {
@@ -22,7 +23,7 @@ enum AppSettings {
             Keys.distractionEnabled: true, Keys.distractionMinutes: 20,
             Keys.keyRejected: false, Keys.firstLaunchDone: false,
             Keys.blockEnabled: false, Keys.blockWeekdayMask: BlockSchedule.workweekMask,
-            Keys.blockStartMinute: 540, Keys.blockEndMinute: 1020,
+            Keys.blockStartMinute: 540, Keys.blockEndMinute: 1020, Keys.darkMode: false,
         ])
     }
 

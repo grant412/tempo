@@ -1,13 +1,15 @@
 import AppKit
 import SwiftUI
 
-/// Owns the timeline and settings windows. AppKit windows hosting SwiftUI, so the menu bar
-/// popover and notification clicks can open them without a SwiftUI openWindow environment.
+/// Owns the timeline and settings windows and the focus timer pop-up. AppKit windows hosting
+/// SwiftUI, so the menu bar popover and notification clicks can open them without a SwiftUI
+/// openWindow environment.
 @MainActor
 final class WindowManager {
     static let shared = WindowManager()
     private var windows: [String: NSWindow] = [:]
-    /// The session the focus notes window was last shown for.
+    private var focusPanel: NSPanel?
+    /// The session the focus timer pop-up was last shown for.
     private var focusNotesSessionID: Int64?
 
     func showTimeline() {
@@ -26,25 +28,76 @@ final class WindowManager {
         }
     }
 
-    /// One notes window. Showing it for another session swaps in that session's view. Showing it
-    /// again for the session it has open only brings it forward, so a draft being typed survives.
-    func showFocusNotes(sessionID: Int64) {
-        let size = NSSize(width: 440, height: 560)
-        let root = AnyView(FocusNotesView(sessionID: sessionID).environmentObject(TempoModel.shared))
-        if let existing = windows["focus-notes"] {
-            let isOpen = existing.isVisible || existing.isMiniaturized
-            if !(isOpen && focusNotesSessionID == sessionID) {
-                existing.contentViewController = NSHostingController(rootView: root)
-                existing.setContentSize(size)
-            }
+    /// The focus timer pop-up (focus timer spec 3.4), floating in the top right corner of the
+    /// screen under the pointer, over every app and Space. `activate` false leaves the app in
+    /// front alone, so a timer that runs out never pulls Grant's typing into the notes box; a
+    /// click on the pop-up makes it key. Showing it again for the session it has open only brings
+    /// it forward, so a draft being typed survives.
+    func showFocusNotes(sessionID: Int64, justEnded: Bool = false, activate: Bool = true) {
+        if let panel = focusPanel, panel.isVisible, focusNotesSessionID == sessionID {
+            present(panel, activate: activate)
+            return
         }
+        let model = TempoModel.shared
+        let session = model.focusSession(id: sessionID)
+        let recap = session.map { model.recap(for: $0) }
+        let host = NSHostingController(rootView: FocusNotesView(session: session, recap: recap, justEnded: justEnded)
+            .environmentObject(model))
+        // Measured before it joins the panel, and never resized by SwiftUI after: inside, the
+        // hidden title bar adds 28 pt of inset that would sit empty under the buttons.
+        let size = host.view.fittingSize
+        host.sizingOptions = []
+        let panel = focusPanel ?? makeFocusPanel()
+        panel.contentViewController = host
+        panel.setContentSize(size)
+        let mouse = NSEvent.mouseLocation
+        if let area = (NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main)?.visibleFrame {
+            panel.setFrameTopLeftPoint(NSPoint(x: area.maxX - panel.frame.width - 16, y: area.maxY - 16))
+        }
+        focusPanel = panel
         focusNotesSessionID = sessionID
-        show(id: "focus-notes", title: "Focus notes", size: size,
-             minSize: NSSize(width: 400, height: 460), transparentTitlebar: false) { root }
+        present(panel, activate: activate)
     }
 
     func closeFocusNotes() {
-        windows["focus-notes"]?.close()
+        focusPanel?.close()
+    }
+
+    /// Slides in from the right when it was hidden.
+    private func present(_ panel: NSPanel, activate: Bool) {
+        if !panel.isVisible {
+            let target = panel.frame
+            panel.alphaValue = 0
+            panel.setFrame(target.offsetBy(dx: 24, dy: 0), display: false)
+            panel.orderFrontRegardless()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                panel.animator().setFrame(target, display: true)
+                panel.animator().alphaValue = 1
+            }
+        } else {
+            panel.orderFrontRegardless()
+        }
+        if activate { panel.makeKey() }
+    }
+
+    private func makeFocusPanel() -> NSPanel {
+        let panel = FocusPanel(contentRect: NSRect(x: 0, y: 0, width: FocusNotesView.width, height: 520),
+                               styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
+                               backing: .buffered, defer: false)
+        panel.title = "Focus timer"
+        panel.titlebarAppearsTransparent = true
+        panel.titleVisibility = .hidden
+        for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            panel.standardWindowButton(button)?.isHidden = true
+        }
+        panel.isMovableByWindowBackground = true
+        panel.hidesOnDeactivate = false
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isReleasedWhenClosed = false
+        return panel
     }
 
     private func show(id: String, title: String, size: NSSize, minSize: NSSize,
@@ -61,7 +114,6 @@ final class WindowManager {
         window.title = title
         window.isReleasedWhenClosed = false
         window.minSize = minSize
-        window.appearance = NSAppearance(named: .aqua)
         if transparentTitlebar {
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
@@ -74,4 +126,9 @@ final class WindowManager {
         window.makeKeyAndOrderFront(nil)
         windows[id] = window
     }
+}
+
+/// Takes typing once clicked, without making Tempo the active app.
+private final class FocusPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
 }

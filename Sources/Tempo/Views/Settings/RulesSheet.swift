@@ -50,7 +50,7 @@ struct RulesSheet: View {
         .padding(20)
         .frame(width: 640, height: 560)
         .background(Theme.bg)
-        .environment(\.colorScheme, .light)
+        .themed()
         .onAppear(perform: loadNames)
     }
 

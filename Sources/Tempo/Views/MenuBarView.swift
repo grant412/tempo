@@ -9,10 +9,17 @@ struct MenuBarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                Eyebrow(text: "Today so far")
-                Text(Format.duration(model.today.total)).font(Theme.display(46)).kerning(-1.6)
-                if let first = model.today.firstActivity {
-                    Text("at the keyboard since \(Format.clock(first))").font(Theme.ui(13)).foregroundStyle(Theme.muted)
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Eyebrow(text: "Today so far")
+                        Text(Format.duration(model.today.total)).font(Theme.display(46)).kerning(-1.6)
+                    }
+                    Spacer(minLength: 12)
+                    AppearanceToggle()
+                }
+                if let line = model.keyboardLine {
+                    Text(line).font(Theme.ui(13)).foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -46,7 +53,7 @@ struct MenuBarView: View {
                     .frame(maxWidth: .infinity).frame(height: 40).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.panel)
             .background(Theme.ink, in: RoundedRectangle(cornerRadius: 10))
 
             VStack(spacing: 6) {
@@ -65,7 +72,43 @@ struct MenuBarView: View {
         .frame(width: 348)
         .background(Theme.panel)
         .foregroundStyle(Theme.ink)
-        .environment(\.colorScheme, .light)
+        .themed()
+    }
+}
+
+/// Light and dark in one pill: a sun and a moon, with the knob under the one in use.
+struct AppearanceToggle: View {
+    @AppStorage(AppSettings.Keys.darkMode) private var dark = false
+
+    var body: some View {
+        Button { Appearance.setDark(!dark) } label: {
+            ZStack(alignment: dark ? .trailing : .leading) {
+                Capsule().fill(Theme.chip)
+                Circle().fill(Theme.panel)
+                    .overlay(Circle().stroke(Theme.line))
+                    .frame(width: 22, height: 22)
+                    .padding(3)
+                HStack(spacing: 0) {
+                    symbol("sun.max.fill", active: !dark)
+                    symbol("moon.fill", active: dark)
+                }
+            }
+            .frame(width: 56, height: 28)
+            .animation(.snappy(duration: 0.2), value: dark)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(dark ? "Switch to light mode" : "Switch to dark mode")
+        .accessibilityLabel("Dark mode")
+        .accessibilityValue(dark ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
+    }
+
+    private func symbol(_ name: String, active: Bool) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(active ? Theme.ink : Theme.muted)
+            .frame(width: 28, height: 28)
     }
 }
 

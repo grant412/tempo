@@ -6,8 +6,9 @@ import UserNotifications
 final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     static let shared = Notifier()
 
+    /// Timer done notifications from before the corner pop-up (focus timer spec 3.3). None are
+    /// posted now; clicking an old one in Notification Center still opens its session.
     nonisolated static let timerCategory = "timer-done"
-    nonisolated static let writeNotesAction = "write-notes"
 
     /// UNUserNotificationCenter needs a real app bundle; skip when run unbundled.
     private var available: Bool { Bundle.main.bundleIdentifier != nil }
@@ -16,12 +17,6 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard available else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        let write = UNNotificationAction(identifier: Self.writeNotesAction,
-                                         title: "Write down what you got done", options: [.foreground])
-        center.setNotificationCategories([
-            UNNotificationCategory(identifier: Self.timerCategory, actions: [write],
-                                   intentIdentifiers: [], options: []),
-        ])
         center.requestAuthorization(options: [.alert, .sound]) { _, error in
             if let error { Log.error("notification auth: \(error)") }
         }
@@ -39,26 +34,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    /// "Timer done", "25 min, 2:10 PM to 2:35 PM", with a button to write notes (focus timer spec 3.3).
-    func postTimerDone(_ session: FocusSession) {
-        guard available else { return }
-        let content = UNMutableNotificationContent()
-        content.title = "Timer done"
-        content.body = "\(Format.minutesLabel(session.planned)), \(Format.clock(session.start)) to \(Format.clock(session.end))"
-        content.sound = .default
-        content.categoryIdentifier = Self.timerCategory
-        content.userInfo = ["sessionID": session.id]
-        let request = UNNotificationRequest(identifier: "timer-\(session.id)", content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error { Log.error("post timer done: \(error)") }
-        }
-    }
-
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         let content = response.notification.request.content
-        // The button and a click on the banner both open the notes for a timer.
+        // An old timer done notification opens that session; nudges open the timeline.
         let sessionID = content.categoryIdentifier == Self.timerCategory
             ? (content.userInfo["sessionID"] as? NSNumber)?.int64Value : nil
         Task { @MainActor in

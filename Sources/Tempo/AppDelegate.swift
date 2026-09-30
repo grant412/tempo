@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 exit(0)
             }
         }
-        NSApp.appearance = NSAppearance(named: .aqua)
+        Appearance.apply()
         activity = ProcessInfo.processInfo.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep],
                                                          reason: "Tempo tracks activity every 5 seconds")
         let model = TempoModel.shared

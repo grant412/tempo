@@ -69,7 +69,7 @@ struct StatusPill: View {
     var body: some View {
         let (text, color): (String, Color) = model.isStopped ? ("Stopped", Theme.muted)
             : model.isPaused ? ("Paused", Theme.muted)
-            : model.accessibilityGranted ? ("Tracking", Color(hex: "#2fb35e")) : ("Needs permission", Color(hex: "#c0382f"))
+            : model.accessibilityGranted ? ("Tracking", Color(hex: "#2fb35e")) : ("Needs permission", Theme.red)
         return HStack(spacing: 8) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(text).font(Theme.ui(12.5, .medium))
