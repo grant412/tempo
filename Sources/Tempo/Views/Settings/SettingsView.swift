@@ -231,18 +231,14 @@ struct SettingsView: View {
         applyDraft()
     }
 
-    /// Writes the draft and applies it at once. Refuses while a block runs, so Settings can
-    /// never shorten or end a running block.
+    /// Writes the draft and applies it at once. AppSettings refuses while a block runs, and the
+    /// draft then goes back to the saved schedule.
     private func applyDraft() {
-        let blocker = BlockEnforcer.shared
-        blocker.refreshWindow()
-        guard !blocker.isLocked else {
+        guard AppSettings.saveBlockSchedule(draft) else {
             draft = savedSchedule
             return
         }
-        AppSettings.saveBlockSchedule(draft)
         savedSchedule = draft
-        blocker.refreshWindow()
     }
 
     private var distractionBlockRow: some View {

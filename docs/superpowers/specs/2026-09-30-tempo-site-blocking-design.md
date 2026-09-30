@@ -257,6 +257,8 @@ a later day, "further notice" for `.distantFuture`. Every surface that shows a l
 
 **`AppSettings`**: keys `blockEnabled` (false), `blockWeekdayMask` (62, Monday to Friday; bit `weekday - 1`),
 `blockStartMinute` (540), `blockEndMinute` (1020), and `static var blockSchedule: BlockSchedule`.
+`static func saveBlockSchedule(_:) -> Bool` writes all four at once, and refuses (false, nothing
+written) while a block runs.
 
 **`ActivityMonitor`**: in the `.tab` case, when `BlockEnforcer.shared.isAdult(domain)`, set title
 and domain to nil.
