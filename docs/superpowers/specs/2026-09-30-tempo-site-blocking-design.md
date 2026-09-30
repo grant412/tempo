@@ -75,7 +75,7 @@ Going Back from the blocked page loads the site again, and it is replaced again 
 A local HTML page shipped in the app at `Tempo.app/Contents/Resources/Blocking/blocked.html`,
 opened as a `file://` URL with a query string:
 
-- Distraction: `?kind=distraction&site=youtube.com&until=5%3A00%20PM`. Shows
+- Distraction: `?kind=distraction&site=youtube.com&until=5:00%20PM`. Shows
   "youtube.com is blocked until 5:00 PM." with a small "Distraction block" eyebrow.
 - Adult: `?kind=adult`. Shows "This site is blocked." and never names the site.
 
@@ -144,7 +144,9 @@ Blocking
   reverts). If the draft covers now, Save first asks "Start the Distraction block now?" with
   the lock's end time, so an in-between edit can never start a lock.
 - An end time at or before the start time runs past midnight (9:00 PM to 1:00 AM). The detail
-  line then adds "Ends the next day." Equal times mean a full 24 hours.
+  line then adds "Ends the next day." Equal times mean a full 24 hours. Windows that touch (end
+  of one is the start of the next) join into one lock, and a schedule that would never unlock
+  cannot be saved.
 - The adult row chip shows the loaded entry count. If the list failed to load, it shows a red
   "List missing" chip instead.
 - Defaults: switch off, Mon to Fri, 9:00 AM to 5:00 PM.
@@ -245,15 +247,17 @@ a later day, "further notice" for `.distantFuture`. Every surface that shows a l
   (`BlockSchedule.lock(containing:calendar:)`, so its end is when blocking really stops),
   assigned only when it changes so views do not redraw every second.
 - `func isAdult(_ host: String) -> Bool` for the tracker.
-- A 1 second `Timer` on the main run loop (`.common` mode), started from `TempoModel.start()`
-  after rules load. Each tick: recompute `distractionWindow` from `AppSettings.blockSchedule`; every fifth
+- A 1 second `Timer` on the main run loop (`.common` mode), started in `AppDelegate` right after
+  `model.start()` (so rules are loaded). Each tick: recompute `distractionWindow` from `AppSettings.blockSchedule`; every fifth
   tick sweep all tabs of each running supported browser; otherwise check the front tab when the
   frontmost app is a supported browser.
 - For each tab: `BlockPolicy(adult:, resolver: TempoModel.shared.resolver, window:)`. Blocks call
   `setURL` with the blocked page URL (`Format.lockEnd(until, now:, calendar:)` for the time). A rewrite is skipped
   when the same tab was rewritten from the same URL in the last 5 seconds (guards a reload loop
   if an engine strips the parameter).
-- Failed reads or writes skip that check and are logged at most once a minute per browser.
+- A failed all-tabs read or a failed `setURL` write skips that check and is logged at most once a
+  minute per browser (a failed all-tabs read also skips that browser for 10 ticks). A failed
+  front-tab read is not logged; the next sweep reads that browser again within 5 seconds.
 
 **`AppSettings`**: keys `blockEnabled` (false), `blockWeekdayMask` (62, Monday to Friday; bit `weekday - 1`),
 `blockStartMinute` (540), `blockEndMinute` (1020), and `static var blockSchedule: BlockSchedule`.
@@ -282,7 +286,7 @@ checklist gets a Blocking section.
 
 | Case | Behavior |
 |---|---|
-| Automation denied or a read times out | Skip that check; logged at most once a minute per browser. Settings already shows the permission state. |
+| Automation denied, or a read or write times out | Skip that check; an all-tabs read or a write that fails is logged at most once a minute per browser (a failed front-tab read is not logged). Settings already shows the permission state. |
 | Browser not running | No Apple Events sent. |
 | Adult list missing or unreadable | Words and nothing else; Settings shows "List missing"; logged once. |
 | Blocked page missing | `about:blank`. |
@@ -334,3 +338,5 @@ visit leaves no domain or title in the segments table.
 - Other search engines (Yahoo, Brave Search, Ecosia) and YouTube Restricted Mode.
 - App blocking.
 - Time on the blocked page is tracked as the browser (Chrome and Safari sort as Research).
+- SafeSearch rewrites are throttled per tab (at most one per 5 seconds for the same URL), so Back
+  from a rewritten search can show the unfiltered page for up to 5 seconds.
