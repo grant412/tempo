@@ -6,8 +6,10 @@ SQLite, Swift Testing. Built with the command line tools only; there is no Xcode
 ## Install or update
 
 Follow README.md, "Install on a new Mac". Update with `git pull` then `scripts/install.sh`.
-After an install, the person has to grant Accessibility (and Chrome and Safari control, if macOS
-asks again) themselves in System Settings; Claude cannot click those dialogs.
+Builds are signed ad-hoc on purpose (Grant chose no certificate and no keychain prompts, 2026-09-30),
+so after every install the person removes and re-adds Tempo in Accessibility (and allows Chrome and
+Safari control if macOS asks again) themselves in System Settings; Claude cannot click those dialogs.
+Do not bring back a signing identity unless they ask.
 
 ## Working on the code
 

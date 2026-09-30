@@ -5,11 +5,8 @@ so none of this has run on the real machine yet. Work top to bottom; the setup s
 
 ## Setup (one time)
 
-- [ ] **Signing identity.** `scripts/setup-signing.sh`. A keychain dialog appears; click Always Allow.
-      If it fails, skip it: install falls back to ad-hoc signing, and you re-grant Accessibility after every install.
-- [ ] **Install.** `scripts/install.sh`. The first codesign may show a keychain dialog; click Always Allow.
-      If it prints "Bootstrap failed: 5", run it again or `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
-- [ ] **Accessibility.** System Settings, Privacy and Security, Accessibility: turn Tempo on.
+- [ ] **Install.** `scripts/install.sh`. No keychain dialog (ad-hoc signing). If it prints "Bootstrap failed: 5", run it again or `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
+- [ ] **Accessibility.** System Settings, Privacy and Security, Accessibility: turn Tempo on. After any later install, remove Tempo with the minus button and add it again.
 - [ ] **Notifications.** Allow Tempo's notifications when asked.
 - [ ] **Browsers.** Use Chrome for a minute and approve "Tempo wants to control Google Chrome". Same for Safari when you use it.
       While that first prompt is up, note whether the menu bar item freezes.
@@ -102,7 +99,7 @@ Spec: `docs/superpowers/specs/2026-09-26-tempo-focus-timer-design.md`.
 
 ## Site blocking
 
-- [ ] After install, re-grant Accessibility, then approve "Tempo wants to control Google Chrome" and the Safari prompt if they appear again.
+- [ ] After install, remove and re-add Tempo in Accessibility, then approve "Tempo wants to control Google Chrome" and the Safari prompt if they appear again.
 - [ ] Settings, Blocking: the adult row shows "21,192 SITES". The Distraction row shows Mon to Fri, 9:00 AM to 5:00 PM, switched off.
 - [ ] Adult: open a known adult site in a normal Chrome tab, a Chrome incognito window, and a Safari private window. Each is replaced by "This site is blocked." within about a second.
 - [ ] Adult privacy: afterwards, the segments query from "Tracking accuracy" shows no adult domain or title, grepping the log for the adult test domain you used (`grep -i <domain> ~/Library/Logs/Tempo.log`) prints nothing, and the log has "blocked an adult site" lines.

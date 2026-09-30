@@ -353,10 +353,11 @@ Fed on every tick with (now, active or away, live category, live item names).
   SwiftUI `openWindow` environment. The only SwiftUI scene is the `MenuBarExtra`.
 - App icon: a small Swift script draws the three-blocks glyph at every size into an iconset;
   `iconutil` makes `AppIcon.icns`.
-- Signing: `scripts/setup-signing.sh` creates a self-signed code signing identity
-  "Tempo Dev" in the login keychain once (Grant enters his password to trust it). Signing
-  with a stable identity keeps Accessibility and Automation grants across rebuilds.
-  Fallback if that fails: ad-hoc signing, with Accessibility re-granted after each install.
+- Signing: ad-hoc (`codesign --sign -`), changed 2026-09-30. A self-signed "Tempo Dev"
+  identity kept grants across rebuilds, but its keychain dialog came back on every new Mac, and
+  Grant chose no certificate and no prompts. Each build is a new app to macOS, so Accessibility
+  is removed and re-added after every install (the old entry's switch stays on but no longer
+  matches), and Chrome and Safari control is allowed again if macOS asks.
 - `scripts/install.sh`: build, assemble, sign, boot out the running agent, copy to
   `/Applications/Tempo.app`, write the LaunchAgent, bootstrap it.
 
@@ -398,8 +399,8 @@ restart via `kill -9`, Quit staying quit, login launch after a restart.
 
 ## 14. Risks
 
-1. Self-signed identity trust needs Grant's password once; if `codesign` still refuses it,
-   fall back to ad-hoc and re-grant Accessibility per install.
+1. Ad-hoc signing means Accessibility is removed and re-added after every install (section
+   11); until then Tempo tracks apps but not window titles, and Settings reads NOT GRANTED.
 2. Background apps holding display sleep assertions (caffeinate-style tools) can stop idle
    from ever triggering. Lock and sleep still stop tracking.
 3. `MenuBarExtra` window focus is quirky for `LSUIElement` apps; opening windows needs

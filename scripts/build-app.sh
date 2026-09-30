@@ -13,12 +13,8 @@ cp Resources/Blocking/blocked.html Resources/Blocking/distraction.jpg Resources/
   "$APP/Contents/Resources/Blocking/"
 [[ -f build/AppIcon.icns ]] || swift scripts/make-icon.swift build
 cp build/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-IDENTITY="${TEMPO_SIGN_IDENTITY:-Tempo Dev}"
-if security find-identity -p codesigning | grep -q "\"$IDENTITY\""; then
-  codesign --force --sign "$IDENTITY" --identifier com.grantfeltz.tempo "$APP"
-else
-  echo "warning: '$IDENTITY' not found, signing ad-hoc (re-grant Accessibility after each install)"
-  codesign --force --sign - --identifier com.grantfeltz.tempo "$APP"
-fi
+# Ad-hoc: no certificate and no keychain prompts. macOS treats each build as a new app, so
+# Accessibility is removed and re-added after every install.
+codesign --force --sign - --identifier com.grantfeltz.tempo "$APP"
 codesign --verify --verbose "$APP"
 echo "built $APP"

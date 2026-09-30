@@ -18,15 +18,15 @@ Needs a Mac with Apple silicon (M1 or later) on macOS 15 or later. No Xcode.
 1. Install Apple's command line tools if they are not there yet: `xcode-select --install`.
 2. Get the code: `git clone https://github.com/grant412/tempo.git ~/Desktop/tempo`, then
    `cd ~/Desktop/tempo`.
-3. `scripts/install.sh`. The first run makes a local "Tempo Dev" signing identity (so macOS
-   keeps Tempo's permissions when you update; click Always Allow on the keychain dialog), then
-   it builds, installs to /Applications, and starts Tempo at login.
+3. `scripts/install.sh`. It builds, installs to /Applications, starts Tempo at login, and opens
+   the Accessibility settings. No keychain prompts.
 4. Grant the permissions below: Accessibility, then Allow when macOS asks to let Tempo control
    Chrome and Safari, then notifications.
 5. Optional: paste your own Claude API key in Settings, Sorting, so new apps and sites get a
    category. Without it they stay Uncategorized until you sort them.
 
-To update later: `git pull` then `scripts/install.sh`.
+To update later: `git pull` then `scripts/install.sh`, then remove and re-add Tempo in
+Accessibility (see Permissions for why).
 
 Everything Tempo records stays on that Mac. Adult blocking and SafeSearch are on from the first
 launch and have no switch (see Blocking below).
@@ -34,7 +34,7 @@ launch and have no switch (see Blocking below).
 ## Build and install
 
     swift test                 # logic tests (Swift Testing)
-    scripts/install.sh         # signing identity if missing, build, sign, install, start at login
+    scripts/install.sh         # build, sign ad-hoc, install to /Applications, start at login
 
 The fonts (OFL) are already committed in `Resources/Fonts`. Run `scripts/fetch-fonts.sh` only
 if that folder is missing.
@@ -50,8 +50,11 @@ and run `launchctl kickstart gui/$(id -u)/com.grantfeltz.tempo`.
 - Automation: approve Tempo controlling Chrome and Safari when macOS asks. That is how it reads
   the site in the active tab, and how it swaps in the blocked page.
 - Notifications: allow them when asked, or break and distraction nudges never show.
-- With ad-hoc signing (no "Tempo Dev" identity), macOS treats every build as a new app:
-  re-grant Accessibility after every install.
+- Tempo signs itself ad-hoc (no certificate, so no keychain prompts). macOS treats every build
+  as a new app, so after every install the old Accessibility entry no longer matches, even though
+  its switch still shows on, and Settings reads NOT GRANTED. Select Tempo, click the minus button,
+  then add `/Applications/Tempo.app` with the plus button and turn it on. Switching it off and
+  on is not enough. Allow Chrome and Safari again if macOS asks.
 
 ## Blocking
 
