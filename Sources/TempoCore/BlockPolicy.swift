@@ -22,13 +22,27 @@ public struct BlockPolicy: Sendable {
         self.window = window
     }
 
+    /// Work pages on a Distraction site, as host and path prefix: never blocked by the window.
+    static let workPages: [(host: String, path: String)] = [
+        ("facebook.com", "/ads/library"),
+    ]
+
     public func action(for url: String) -> BlockAction {
         guard let host = Domain.normalize(url) else { return .allow }
         if adult.contains(host: host) { return .blockAdult }
-        if let window, resolver.category(for: ItemKey(kind: .domain, key: host)) == .distraction {
+        if let window, resolver.category(for: ItemKey(kind: .domain, key: host)) == .distraction,
+           !Self.isWorkPage(host: host, url: url) {
             return .blockDistraction(site: host, until: window.end)
         }
         if let rewritten = SafeSearch.enforced(url) { return .rewrite(rewritten) }
         return .allow
+    }
+
+    static func isWorkPage(host: String, url: String) -> Bool {
+        guard let path = URL(string: url)?.path else { return false }
+        return workPages.contains { page in
+            (host == page.host || host.hasSuffix("." + page.host))
+                && (path == page.path || path.hasPrefix(page.path + "/"))
+        }
     }
 }

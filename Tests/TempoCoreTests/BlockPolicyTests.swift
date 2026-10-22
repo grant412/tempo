@@ -32,6 +32,16 @@ struct BlockPolicyTests {
                 == .blockDistraction(site: "m.youtube.com", until: window.end))
     }
 
+    @Test func adLibraryIsAllowedInsideTheWindow() {
+        #expect(policy(inWindow: true).action(for: "https://www.facebook.com/ads/library/?active_status=all&q=a")
+                == .allow)
+        #expect(policy(inWindow: true).action(for: "https://facebook.com/ads/library") == .allow)
+        #expect(policy(inWindow: true).action(for: "https://www.facebook.com/")
+                == .blockDistraction(site: "facebook.com", until: window.end))
+        #expect(policy(inWindow: true).action(for: "https://www.facebook.com/ads/libraryfeed")
+                == .blockDistraction(site: "facebook.com", until: window.end))
+    }
+
     @Test func otherCategoriesAndUnsortedSitesAreAllowed() {
         #expect(policy(inWindow: true).action(for: "https://github.com/") == .allow)
         #expect(policy(inWindow: true).action(for: "https://unsorted-site.example/") == .allow)
