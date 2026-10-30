@@ -4,7 +4,7 @@ import Testing
 
 struct ModelsTests {
     @Test func categoryOrderAndColors() {
-        #expect(CategoryID.allCases.map(\.rawValue) == ["code", "design", "comms", "meet", "writing", "research", "admin", "distraction", "uncategorized"])
+        #expect(CategoryID.allCases.map(\.rawValue) == ["code", "design", "comms", "meet", "writing", "research", "education", "admin", "distraction", "uncategorized"])
         #expect(CategoryID.code.fillHex == "#2870cc")
         #expect(CategoryID.code.lightText)
         #expect(!CategoryID.design.lightText)
@@ -12,7 +12,12 @@ struct ModelsTests {
         #expect(CategoryID.distraction.isDistraction)
         #expect(!CategoryID.code.isDistraction)
         #expect(CategoryID.comms.name == "Communication")
-        #expect(CategoryID.assignable.count == 8)
+        #expect(CategoryID.education.name == "Education")
+        #expect(CategoryID.education.fillHex == "#17a9c9")
+        #expect(!CategoryID.education.lightText)
+        #expect(!CategoryID.education.isDistraction)
+        #expect(DefaultRules.entries.contains { $0.key == "coursera.org" && $0.category == .education })
+        #expect(CategoryID.assignable.count == 9)
         #expect(!CategoryID.assignable.contains(.uncategorized))
     }
 

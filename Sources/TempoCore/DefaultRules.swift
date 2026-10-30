@@ -8,7 +8,7 @@ public struct DefaultRule: Equatable, Sendable {
 
 public enum DefaultRules {
     /// Bump when entries change; seeding inserts new entries only.
-    public static let version = 1
+    public static let version = 2
 
     private static func apps(_ c: CategoryID, _ ids: [String]) -> [DefaultRule] {
         ids.map { DefaultRule(kind: .app, key: $0, category: c) }
@@ -35,6 +35,8 @@ public enum DefaultRules {
                            "com.apple.Dictionary"])
         + sites(.research, ["google.com", "stackoverflow.com", "wikipedia.org", "developer.apple.com",
                             "cloudflare.com", "developers.cloudflare.com", "perplexity.ai", "chatgpt.com"])
+        + sites(.education, ["coursera.org", "udemy.com", "edx.org", "khanacademy.org", "skillshare.com",
+                             "masterclass.com", "brilliant.org", "duolingo.com"])
         + apps(.admin, ["com.apple.finder", "com.apple.systempreferences", "com.apple.Passwords", "com.apple.iCal",
                         "com.apple.reminders", "com.apple.AppStore", "com.logi.optionsplus",
                         "com.privateinternetaccess.vpn", "com.ameba.SwiftBar", "com.grantfeltz.tempo"])

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
-    case code, design, comms, meet, writing, research, admin, distraction, uncategorized
+    case code, design, comms, meet, writing, research, education, admin, distraction, uncategorized
 
     public var name: String {
         switch self {
@@ -11,6 +11,7 @@ public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
         case .meet: "Meetings"
         case .writing: "Writing"
         case .research: "Research"
+        case .education: "Education"
         case .admin: "Admin"
         case .distraction: "Distraction"
         case .uncategorized: "Uncategorized"
@@ -26,6 +27,7 @@ public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
         case .meet: "#eda100"
         case .writing: "#e87ba4"
         case .research: "#008300"
+        case .education: "#17a9c9"
         case .admin: "#4a3aa7"
         case .distraction: "#ec5f5e"
         case .uncategorized: "#b8b3a8"
@@ -45,7 +47,8 @@ public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
         case .comms: "email, chat, messaging, work social networks"
         case .meet: "video calls and meeting apps"
         case .writing: "documents, notes, word processing"
-        case .research: "reading documentation, search, learning, reference sites"
+        case .research: "reading documentation, search, reference sites"
+        case .education: "online courses, tutorials, lessons, language learning, studying"
         case .admin: "finance, billing, settings, file management, dashboards, scheduling"
         case .distraction: "entertainment, social feeds, video, news, shopping, games"
         case .uncategorized: "not assignable"

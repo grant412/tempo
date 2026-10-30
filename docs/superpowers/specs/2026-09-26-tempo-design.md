@@ -74,12 +74,13 @@ Categories (fixed set in v1; order is the stacking order in bars and the week st
 | meet | Meetings | `#eda100` | ink | no |
 | writing | Writing | `#e87ba4` | ink | no |
 | research | Research | `#008300` | white | no |
+| education | Education | `#17a9c9` | ink | no |
 | admin | Admin | `#4a3aa7` | white | no |
 | distraction | Distraction | `#ec5f5e` | ink | yes |
 | uncategorized | Uncategorized | stripes `#b8b3a8`/`#c9c4ba` at 135° | ink | no |
 
-Every fill and label pair clears 4.5:1. The eight hues passed the colorblind validator
-(adjacent CVD delta E 9.1 or better). Blocks always carry a text label or tooltip, so color
+Every fill and label pair clears 4.5:1. The original eight hues passed the colorblind validator
+(adjacent CVD delta E 9.1 or better); Education was added later with its own check against all eight. Blocks always carry a text label or tooltip, so color
 never carries meaning alone.
 
 ## 4. Screens
@@ -278,6 +279,8 @@ insert where no row exists, so they never overwrite a user choice or a tombstone
 - Research: Chrome and Safari (used only when no domain), Preview, Books, Dictionary;
   google.com, stackoverflow.com, wikipedia.org, developer.apple.com, cloudflare.com,
   developers.cloudflare.com, perplexity.ai, chatgpt.com.
+- Education: coursera.org, udemy.com, edx.org, khanacademy.org, skillshare.com, masterclass.com,
+  brilliant.org, duolingo.com.
 - Admin: Finder, System Settings, Passwords, Calendar, Reminders, App Store, Logi Options+,
   Private Internet Access, SwiftBar, Tempo itself; dash.cloudflare.com, dashboard.stripe.com,
   stripe.com, calendly.com, calendar.google.com, drive.google.com, supabase.com.
