@@ -1,4 +1,7 @@
 import CoreGraphics
+import Darwin
+import Foundation
+import TempoCore
 import IOKit.pwr_mgt
 
 enum IdleReader {
@@ -7,11 +10,35 @@ enum IdleReader {
         CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
     }
 
-    /// True while some app holds a display-sleep assertion: calls and playing video.
+    /// True while a call or playing video holds the display awake. Assertions the audio daemon
+    /// leaks are ignored (see DisplayWake), so they cannot switch idle detection off.
     static func displaySleepPrevented() -> Bool {
-        var status: Unmanaged<CFDictionary>?
-        guard IOPMCopyAssertionsStatus(&status) == kIOReturnSuccess,
-              let dict = status?.takeRetainedValue() as? [String: Any] else { return false }
-        return ((dict["PreventUserIdleDisplaySleep"] as? Int) ?? 0) > 0
+        DisplayWake.holdsPresence(displayWakeAssertions())
+    }
+
+    static func displayWakeAssertions() -> [DisplayWakeAssertion] {
+        var byProcess: Unmanaged<CFDictionary>?
+        guard IOPMCopyAssertionsByProcess(&byProcess) == kIOReturnSuccess,
+              let dict = byProcess?.takeRetainedValue() as? [NSNumber: [[String: Any]]] else { return [] }
+        var out: [DisplayWakeAssertion] = []
+        for (pid, list) in dict {
+            for a in list {
+                let type = a[kIOPMAssertionTypeKey as String] as? String
+                guard type == kIOPMAssertionTypePreventUserIdleDisplaySleep as String
+                    || type == kIOPMAssertionTypeNoDisplaySleep as String else { continue }
+                let level = a["AssertLevel"] as? Int ?? 255
+                guard level > 0 else { continue }
+                let owner = a["Process Name"] as? String ?? processName(pid.int32Value)
+                out.append(DisplayWakeAssertion(ownerProcess: owner,
+                                                name: a[kIOPMAssertionNameKey as String] as? String ?? ""))
+            }
+        }
+        return out
+    }
+
+    private static func processName(_ pid: pid_t) -> String {
+        var buf = [CChar](repeating: 0, count: 256)
+        guard proc_name(pid, &buf, UInt32(buf.count)) > 0 else { return "" }
+        return String(cString: buf)
     }
 }
