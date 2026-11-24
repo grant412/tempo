@@ -7,7 +7,7 @@ public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
         switch self {
         case .code: "Code"
         case .design: "Design"
-        case .comms: "Communication"
+        case .comms: "Marketing"
         case .meet: "Meetings"
         case .writing: "Writing"
         case .research: "Research"
@@ -44,7 +44,7 @@ public enum CategoryID: String, CaseIterable, Codable, Sendable, Hashable {
         switch self {
         case .code: "programming, terminals, code editors, developer tools, code hosting, AI coding assistants"
         case .design: "design tools, image and video editing, prototyping"
-        case .comms: "email, chat, messaging, work social networks"
+        case .comms: "marketing and outreach: email, chat, messaging, work social networks, ads managers, social posting and scheduling"
         case .meet: "video calls and meeting apps"
         case .writing: "documents, notes, word processing"
         case .research: "reading documentation, search, reference sites"

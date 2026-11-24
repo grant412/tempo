@@ -11,7 +11,7 @@ struct ModelsTests {
         #expect(CategoryID.distraction.fillHex == "#ec5f5e")
         #expect(CategoryID.distraction.isDistraction)
         #expect(!CategoryID.code.isDistraction)
-        #expect(CategoryID.comms.name == "Communication")
+        #expect(CategoryID.comms.name == "Marketing")
         #expect(CategoryID.education.name == "Education")
         #expect(CategoryID.education.fillHex == "#17a9c9")
         #expect(!CategoryID.education.lightText)
